@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Wi-Fi CSI Through-Wall Monitoring Dashboard</title>
+  <title>Wi-Fi CSI Multi-Human Monitoring Dashboard</title>
   <style>
     :root {
       --bg: #0d1117;
@@ -10,6 +10,7 @@
       --border: #30363d;
       --accent: #58a6ff;
       --alert: #f85149;
+      --warning: #d29922;
       --safe: #3fb950;
       --text: #c9d1d9;
       --text-dim: #8b949e;
@@ -30,15 +31,17 @@
       margin-bottom: 16px;
     }
     h1 { font-size: 1.25rem; color: #fff; }
+    .badge-group { display: flex; gap: 8px; }
     .badge {
       display: inline-block;
-      padding: 4px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
       font-size: 0.8rem;
       font-weight: 600;
     }
     .badge-ok { background: rgba(63, 185, 80, 0.2); color: var(--safe); border: 1px solid var(--safe); }
-    .badge-alert { background: rgba(248, 81, 73, 0.2); color: var(--alert); border: 1px solid var(--alert); }
+    .badge-single { background: rgba(210, 153, 34, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+    .badge-multi { background: rgba(248, 81, 73, 0.2); color: var(--alert); border: 1px solid var(--alert); }
 
     .grid {
       display: grid;
@@ -66,7 +69,7 @@
     }
     .metrics {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -77,12 +80,12 @@
       text-align: center;
     }
     .metric-val {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: bold;
       color: var(--accent);
     }
     .metric-lbl {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-dim);
       margin-top: 4px;
     }
@@ -101,36 +104,43 @@
 <body>
   <header>
     <div>
-      <h1>Wi-Fi CSI Through-Wall Monitoring System</h1>
-      <span style="font-size:0.8rem; color:var(--text-dim);">Edge ESP32 Signal Processing Telemetry</span>
+      <h1>Wi-Fi CSI Multi-Human Through-Wall Monitoring</h1>
+      <span style="font-size:0.8rem; color:var(--text-dim);">Multipath Variance & Spatial Multi-Target Estimation</span>
     </div>
-    <div id="status-pill" class="badge badge-ok">MONITORING - QUIET</div>
+    <div class="badge-group">
+      <div id="count-pill" class="badge badge-ok">OCCUPANTS: 0 (EMPTY)</div>
+      <div id="status-pill" class="badge badge-ok">MONITORING</div>
+    </div>
   </header>
 
   <div class="grid">
-    <!-- Section 1: Room Scanner / Radar -->
+    <!-- Section 1: Room Scanner / Multi-Human Radar -->
     <div class="card">
-      <h2>1. Room Scanner (Radar View)</h2>
+      <h2>1. Spatial Scanner (Multi-Target Radar)</h2>
       <canvas id="radarCanvas" width="400" height="300"></canvas>
     </div>
 
     <!-- Section 2: Real-time Variance & Thresholds -->
     <div class="card">
-      <h2>2. CSI Variance & Detection Thresholds</h2>
+      <h2>2. CSI Disruption Energy & Thresholds</h2>
       <canvas id="chartCanvas" width="400" height="300"></canvas>
     </div>
 
-    <!-- Section 3: Movement Intensity & Metrics -->
+    <!-- Section 3: Movement Intensity & Multi-Human Metrics -->
     <div class="card">
-      <h2>3. Movement Intensity Gauge</h2>
+      <h2>3. Occupancy Estimation Metrics</h2>
       <div class="metrics">
+        <div class="metric-box">
+          <div id="val-occupants" class="metric-val" style="color:var(--safe)">0</div>
+          <div class="metric-lbl">Est. Humans</div>
+        </div>
         <div class="metric-box">
           <div id="val-rssi" class="metric-val">-58 dBm</div>
           <div class="metric-lbl">Link RSSI</div>
         </div>
         <div class="metric-box">
           <div id="val-var" class="metric-val">2.34</div>
-          <div class="metric-lbl">Sliding Variance</div>
+          <div class="metric-lbl">Raw Variance</div>
         </div>
         <div class="metric-box">
           <div id="val-ema" class="metric-val">2.10</div>
@@ -142,12 +152,12 @@
 
     <!-- Section 4: System Monitor & History -->
     <div class="card">
-      <h2>4. System Monitor & Event History</h2>
-      <div style="margin-bottom:8px; font-size:0.85rem;">
-        <span>Threshold High: <b>18.5</b> | Threshold Low: <b>8.0</b> | Window: <b>40</b></span>
+      <h2>4. Multi-Target Detection History</h2>
+      <div style="margin-bottom:8px; font-size:0.8rem; color:var(--text-dim);">
+        <span>T1 (1-Human): <b>18.5</b> | T2 (Multi-Human): <b>38.0</b> | T3 (Crowd): <b>68.0</b></span>
       </div>
       <div id="log-list">
-        <div class="log-item" style="color:#8b949e;">[System] Telemetry stream initialized.</div>
+        <div class="log-item" style="color:#8b949e;">[System] Multi-human estimation pipeline ready.</div>
       </div>
     </div>
   </div>
@@ -165,9 +175,11 @@
     let currentVariance = 0;
     let currentEMA = 0;
     let currentState = 0;
+    let currentOccupants = 0;
+    let currentActivity = "Quiet";
+    let currentTargets = [];
     let currentRSSI = -60;
 
-    // Connect to SSE stream
     const evtSource = new EventSource('/stream');
     evtSource.onmessage = (e) => {
       const data = JSON.parse(e.data);
@@ -175,28 +187,48 @@
       currentVariance = data.raw_var;
       currentEMA = data.ema_var;
       currentState = data.state;
+      currentOccupants = data.occupant_count;
+      currentActivity = data.activity_level;
+      currentTargets = data.targets || [];
 
       document.getElementById('val-rssi').innerText = `${currentRSSI} dBm`;
       document.getElementById('val-var').innerText = currentVariance.toFixed(2);
       document.getElementById('val-ema').innerText = currentEMA.toFixed(2);
 
-      const pill = document.getElementById('status-pill');
-      if (currentState === 1) {
-        pill.innerText = "ALERT - MOVEMENT DETECTED";
-        pill.className = "badge badge-alert";
+      const occElem = document.getElementById('val-occupants');
+      occElem.innerText = currentOccupants;
+
+      const countPill = document.getElementById('count-pill');
+      const statusPill = document.getElementById('status-pill');
+
+      if (currentOccupants === 0) {
+        occElem.style.color = "var(--safe)";
+        countPill.innerText = "OCCUPANTS: 0 (EMPTY)";
+        countPill.className = "badge badge-ok";
+        statusPill.innerText = "MONITORING";
+        statusPill.className = "badge badge-ok";
+      } else if (currentOccupants === 1) {
+        occElem.style.color = "var(--warning)";
+        countPill.innerText = "OCCUPANTS: 1 (SINGLE HUMAN)";
+        countPill.className = "badge badge-single";
+        statusPill.innerText = "ACTIVE TARGET";
+        statusPill.className = "badge badge-single";
       } else {
-        pill.innerText = "MONITORING - QUIET";
-        pill.className = "badge badge-ok";
+        occElem.style.color = "var(--alert)";
+        countPill.innerText = `OCCUPANTS: ${currentOccupants}+ (MULTIPLE HUMANS)`;
+        countPill.className = "badge badge-multi";
+        statusPill.innerText = "HIGH DISTURBANCE";
+        statusPill.className = "badge badge-multi";
       }
 
-      history.push({ raw: currentVariance, ema: currentEMA, state: currentState });
+      history.push({ raw: currentVariance, ema: currentEMA, occupants: currentOccupants });
       if (history.length > 80) history.shift();
 
       if (data.event) {
         const log = document.getElementById('log-list');
         const item = document.createElement('div');
         item.className = 'log-item';
-        item.style.color = data.state === 1 ? '#f85149' : '#3fb950';
+        item.style.color = currentOccupants >= 2 ? '#f85149' : (currentOccupants === 1 ? '#d29922' : '#3fb950');
         item.innerText = `[${new Date().toLocaleTimeString()}] ${data.event}`;
         log.prepend(item);
       }
@@ -209,7 +241,7 @@
       rCtx.fillStyle = "rgba(0, 5, 10, 0.15)";
       rCtx.fillRect(0, 0, w, h);
 
-      // Circles
+      // Distance rings
       rCtx.strokeStyle = "#1b4d2e";
       rCtx.lineWidth = 1;
       for (let i = 1; i <= 3; i++) {
@@ -229,19 +261,30 @@
       rCtx.lineTo(sx, sy);
       rCtx.stroke();
 
-      // If movement detected, draw activity zone ripple
-      if (currentState === 1) {
-        rCtx.fillStyle = "rgba(248, 81, 73, 0.7)";
+      // Render multiple detected human targets
+      currentTargets.forEach((tgt, idx) => {
+        const tx = cx + (r * tgt.dist) * Math.cos(tgt.angle);
+        const ty = cy + (r * tgt.dist) * Math.sin(tgt.angle);
+        const color = idx === 0 ? "rgba(248, 81, 73, " : (idx === 1 ? "rgba(210, 153, 34, " : "rgba(88, 166, 255, ");
+
+        // Pulsating center
+        rCtx.fillStyle = color + "0.85)";
         rCtx.beginPath();
-        const targetR = (r * 0.55);
-        rCtx.arc(cx + 40, cy - 20, 10 + (Math.sin(Date.now() / 150) * 4), 0, Math.PI * 2);
+        rCtx.arc(tx, ty, 8 + Math.sin(Date.now() / 150 + idx) * 3, 0, Math.PI * 2);
         rCtx.fill();
 
-        rCtx.strokeStyle = "rgba(248, 81, 73, 0.4)";
+        // Expanding detection ripple
+        rCtx.strokeStyle = color + "0.4)";
+        rCtx.lineWidth = 1.5;
         rCtx.beginPath();
-        rCtx.arc(cx + 40, cy - 20, 24, 0, Math.PI * 2);
+        rCtx.arc(tx, ty, 18 + (Date.now() / 30 + idx * 8) % 16, 0, Math.PI * 2);
         rCtx.stroke();
-      }
+
+        // Target label
+        rCtx.fillStyle = "#fff";
+        rCtx.font = "10px monospace";
+        rCtx.fillText(`Human #${idx + 1}`, tx - 22, ty - 14);
+      });
     }
 
     function drawChart() {
@@ -249,22 +292,26 @@
       cCtx.fillStyle = "#090d13";
       cCtx.fillRect(0, 0, w, h);
 
-      // Grid & Threshold Lines
-      const maxVal = 35.0;
-      const yHigh = h - (18.5 / maxVal) * (h - 30) - 15;
-      const yLow = h - (8.0 / maxVal) * (h - 30) - 15;
+      const maxVal = 90.0;
+      const ySingle = h - (18.5 / maxVal) * (h - 30) - 15;
+      const yMulti = h - (38.0 / maxVal) * (h - 30) - 15;
+      const yCrowd = h - (68.0 / maxVal) * (h - 30) - 15;
 
-      cCtx.strokeStyle = "rgba(248, 81, 73, 0.5)";
+      // Multi-tier threshold lines
       cCtx.setLineDash([4, 4]);
-      cCtx.beginPath(); cCtx.moveTo(0, yHigh); cCtx.lineTo(w, yHigh); cCtx.stroke();
+      cCtx.strokeStyle = "rgba(210, 153, 34, 0.6)";
+      cCtx.beginPath(); cCtx.moveTo(0, ySingle); cCtx.lineTo(w, ySingle); cCtx.stroke();
 
-      cCtx.strokeStyle = "rgba(88, 166, 255, 0.5)";
-      cCtx.beginPath(); cCtx.moveTo(0, yLow); cCtx.lineTo(w, yLow); cCtx.stroke();
+      cCtx.strokeStyle = "rgba(248, 81, 73, 0.7)";
+      cCtx.beginPath(); cCtx.moveTo(0, yMulti); cCtx.lineTo(w, yMulti); cCtx.stroke();
+
+      cCtx.strokeStyle = "rgba(163, 113, 247, 0.7)";
+      cCtx.beginPath(); cCtx.moveTo(0, yCrowd); cCtx.lineTo(w, yCrowd); cCtx.stroke();
       cCtx.setLineDash([]);
 
       if (history.length < 2) return;
-
       const step = w / 80;
+
       // Draw Raw Variance
       cCtx.strokeStyle = "#8b949e";
       cCtx.lineWidth = 1;
@@ -276,7 +323,7 @@
       });
       cCtx.stroke();
 
-      // Draw EMA Variance
+      // Draw Smoothed EMA
       cCtx.strokeStyle = "#58a6ff";
       cCtx.lineWidth = 2;
       cCtx.beginPath();
@@ -294,19 +341,21 @@
       gCtx.fillRect(0, 0, w, h);
 
       const barW = w - 40;
-      const pct = Math.min(currentEMA / 30.0, 1.0);
+      const pct = Math.min(currentEMA / 85.0, 1.0);
 
       gCtx.fillStyle = "#21262d";
-      gCtx.fillRect(20, 50, barW, 24);
+      gCtx.fillRect(20, 45, barW, 26);
 
-      gCtx.fillStyle = currentState === 1 ? "#f85149" : "#3fb950";
-      gCtx.fillRect(20, 50, barW * pct, 24);
+      // Color tiers based on occupant density
+      gCtx.fillStyle = currentOccupants >= 2 ? "#f85149" : (currentOccupants === 1 ? "#d29922" : "#3fb950");
+      gCtx.fillRect(20, 45, barW * pct, 26);
 
       gCtx.fillStyle = "#c9d1d9";
-      gCtx.font = "12px monospace";
-      gCtx.fillText("0.0", 20, 90);
-      gCtx.fillText("Threshold (18.5)", 20 + barW * (18.5 / 30.0) - 30, 90);
-      gCtx.fillText("30.0+", w - 50, 90);
+      gCtx.font = "11px monospace";
+      gCtx.fillText("0 (Quiet)", 20, 90);
+      gCtx.fillText("1-Human (18.5)", 20 + barW * (18.5 / 85.0) - 35, 90);
+      gCtx.fillText("2-Humans (38.0)", 20 + barW * (38.0 / 85.0) - 35, 90);
+      gCtx.fillText("Crowd (68+)", w - 75, 90);
     }
 
     function loop() {
