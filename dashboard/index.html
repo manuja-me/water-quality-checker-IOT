@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wi-Fi CSI Through-Wall Monitoring Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --alert: #f85149;
+      --safe: #3fb950;
+      --text: #c9d1d9;
+      --text-dim: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    h1 { font-size: 1.25rem; color: #fff; }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-ok { background: rgba(63, 185, 80, 0.2); color: var(--safe); border: 1px solid var(--safe); }
+    .badge-alert { background: rgba(248, 81, 73, 0.2); color: var(--alert); border: 1px solid var(--alert); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 16px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+    }
+    .card h2 {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      background: #000;
+      border-radius: 4px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .metric-box {
+      background: rgba(255,255,255,0.03);
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .metric-val {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .metric-lbl {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+    #log-list {
+      height: 120px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      font-family: monospace;
+      background: #000;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .log-item { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Wi-Fi CSI Through-Wall Monitoring System</h1>
+      <span style="font-size:0.8rem; color:var(--text-dim);">Edge ESP32 Signal Processing Telemetry</span>
+    </div>
+    <div id="status-pill" class="badge badge-ok">MONITORING - QUIET</div>
+  </header>
+
+  <div class="grid">
+    <!-- Section 1: Room Scanner / Radar -->
+    <div class="card">
+      <h2>1. Room Scanner (Radar View)</h2>
+      <canvas id="radarCanvas" width="400" height="300"></canvas>
+    </div>
+
+    <!-- Section 2: Real-time Variance & Thresholds -->
+    <div class="card">
+      <h2>2. CSI Variance & Detection Thresholds</h2>
+      <canvas id="chartCanvas" width="400" height="300"></canvas>
+    </div>
+
+    <!-- Section 3: Movement Intensity & Metrics -->
+    <div class="card">
+      <h2>3. Movement Intensity Gauge</h2>
+      <div class="metrics">
+        <div class="metric-box">
+          <div id="val-rssi" class="metric-val">-58 dBm</div>
+          <div class="metric-lbl">Link RSSI</div>
+        </div>
+        <div class="metric-box">
+          <div id="val-var" class="metric-val">2.34</div>
+          <div class="metric-lbl">Sliding Variance</div>
+        </div>
+        <div class="metric-box">
+          <div id="val-ema" class="metric-val">2.10</div>
+          <div class="metric-lbl">Smoothed EMA</div>
+        </div>
+      </div>
+      <canvas id="gaugeCanvas" width="400" height="150"></canvas>
+    </div>
+
+    <!-- Section 4: System Monitor & History -->
+    <div class="card">
+      <h2>4. System Monitor & Event History</h2>
+      <div style="margin-bottom:8px; font-size:0.85rem;">
+        <span>Threshold High: <b>18.5</b> | Threshold Low: <b>8.0</b> | Window: <b>40</b></span>
+      </div>
+      <div id="log-list">
+        <div class="log-item" style="color:#8b949e;">[System] Telemetry stream initialized.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const radar = document.getElementById('radarCanvas');
+    const rCtx = radar.getContext('2d');
+    const chart = document.getElementById('chartCanvas');
+    const cCtx = chart.getContext('2d');
+    const gauge = document.getElementById('gaugeCanvas');
+    const gCtx = gauge.getContext('2d');
+
+    let history = [];
+    let radarAngle = 0;
+    let currentVariance = 0;
+    let currentEMA = 0;
+    let currentState = 0;
+    let currentRSSI = -60;
+
+    // Connect to SSE stream
+    const evtSource = new EventSource('/stream');
+    evtSource.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      currentRSSI = data.rssi;
+      currentVariance = data.raw_var;
+      currentEMA = data.ema_var;
+      currentState = data.state;
+
+      document.getElementById('val-rssi').innerText = `${currentRSSI} dBm`;
+      document.getElementById('val-var').innerText = currentVariance.toFixed(2);
+      document.getElementById('val-ema').innerText = currentEMA.toFixed(2);
+
+      const pill = document.getElementById('status-pill');
+      if (currentState === 1) {
+        pill.innerText = "ALERT - MOVEMENT DETECTED";
+        pill.className = "badge badge-alert";
+      } else {
+        pill.innerText = "MONITORING - QUIET";
+        pill.className = "badge badge-ok";
+      }
+
+      history.push({ raw: currentVariance, ema: currentEMA, state: currentState });
+      if (history.length > 80) history.shift();
+
+      if (data.event) {
+        const log = document.getElementById('log-list');
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.style.color = data.state === 1 ? '#f85149' : '#3fb950';
+        item.innerText = `[${new Date().toLocaleTimeString()}] ${data.event}`;
+        log.prepend(item);
+      }
+    };
+
+    function drawRadar() {
+      const w = radar.width, h = radar.height;
+      const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 20;
+
+      rCtx.fillStyle = "rgba(0, 5, 10, 0.15)";
+      rCtx.fillRect(0, 0, w, h);
+
+      // Circles
+      rCtx.strokeStyle = "#1b4d2e";
+      rCtx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) {
+        rCtx.beginPath();
+        rCtx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
+        rCtx.stroke();
+      }
+
+      // Sweep line
+      radarAngle += 0.04;
+      const sx = cx + r * Math.cos(radarAngle);
+      const sy = cy + r * Math.sin(radarAngle);
+      rCtx.strokeStyle = "#3fb950";
+      rCtx.lineWidth = 2;
+      rCtx.beginPath();
+      rCtx.moveTo(cx, cy);
+      rCtx.lineTo(sx, sy);
+      rCtx.stroke();
+
+      // If movement detected, draw activity zone ripple
+      if (currentState === 1) {
+        rCtx.fillStyle = "rgba(248, 81, 73, 0.7)";
+        rCtx.beginPath();
+        const targetR = (r * 0.55);
+        rCtx.arc(cx + 40, cy - 20, 10 + (Math.sin(Date.now() / 150) * 4), 0, Math.PI * 2);
+        rCtx.fill();
+
+        rCtx.strokeStyle = "rgba(248, 81, 73, 0.4)";
+        rCtx.beginPath();
+        rCtx.arc(cx + 40, cy - 20, 24, 0, Math.PI * 2);
+        rCtx.stroke();
+      }
+    }
+
+    function drawChart() {
+      const w = chart.width, h = chart.height;
+      cCtx.fillStyle = "#090d13";
+      cCtx.fillRect(0, 0, w, h);
+
+      // Grid & Threshold Lines
+      const maxVal = 35.0;
+      const yHigh = h - (18.5 / maxVal) * (h - 30) - 15;
+      const yLow = h - (8.0 / maxVal) * (h - 30) - 15;
+
+      cCtx.strokeStyle = "rgba(248, 81, 73, 0.5)";
+      cCtx.setLineDash([4, 4]);
+      cCtx.beginPath(); cCtx.moveTo(0, yHigh); cCtx.lineTo(w, yHigh); cCtx.stroke();
+
+      cCtx.strokeStyle = "rgba(88, 166, 255, 0.5)";
+      cCtx.beginPath(); cCtx.moveTo(0, yLow); cCtx.lineTo(w, yLow); cCtx.stroke();
+      cCtx.setLineDash([]);
+
+      if (history.length < 2) return;
+
+      const step = w / 80;
+      // Draw Raw Variance
+      cCtx.strokeStyle = "#8b949e";
+      cCtx.lineWidth = 1;
+      cCtx.beginPath();
+      history.forEach((pt, i) => {
+        const x = i * step;
+        const y = h - (Math.min(pt.raw, maxVal) / maxVal) * (h - 30) - 15;
+        if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
+      });
+      cCtx.stroke();
+
+      // Draw EMA Variance
+      cCtx.strokeStyle = "#58a6ff";
+      cCtx.lineWidth = 2;
+      cCtx.beginPath();
+      history.forEach((pt, i) => {
+        const x = i * step;
+        const y = h - (Math.min(pt.ema, maxVal) / maxVal) * (h - 30) - 15;
+        if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
+      });
+      cCtx.stroke();
+    }
+
+    function drawGauge() {
+      const w = gauge.width, h = gauge.height;
+      gCtx.fillStyle = "#090d13";
+      gCtx.fillRect(0, 0, w, h);
+
+      const barW = w - 40;
+      const pct = Math.min(currentEMA / 30.0, 1.0);
+
+      gCtx.fillStyle = "#21262d";
+      gCtx.fillRect(20, 50, barW, 24);
+
+      gCtx.fillStyle = currentState === 1 ? "#f85149" : "#3fb950";
+      gCtx.fillRect(20, 50, barW * pct, 24);
+
+      gCtx.fillStyle = "#c9d1d9";
+      gCtx.font = "12px monospace";
+      gCtx.fillText("0.0", 20, 90);
+      gCtx.fillText("Threshold (18.5)", 20 + barW * (18.5 / 30.0) - 30, 90);
+      gCtx.fillText("30.0+", w - 50, 90);
+    }
+
+    function loop() {
+      drawRadar();
+      drawChart();
+      drawGauge();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

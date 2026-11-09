@@ -1,0 +1,29 @@
+# Firmware build artifacts
+firmware/**/.pio/
+firmware/**/build/
+firmware/**/sdkconfig
+firmware/**/sdkconfig.old
+*.bin
+*.elf
+*.map
+
+# Python / Dashboard
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# KiCad temporary & backup files
+*.kicad_prl
+*.bak
+*-save.kicad_sch
+*-save.kicad_pcb
+_autosave-*
+*.lck
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

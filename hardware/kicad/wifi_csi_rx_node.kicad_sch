@@ -1,0 +1,37 @@
+(kicad_sch (version 20211123) (generator eeschema)
+
+  (uuid "93e2b34a-9e58-472d-8e67-935dfa6843c0")
+
+  (paper "A4")
+
+  (title_block
+    (title "Wi-Fi CSI Human Presence & Movement Monitoring - Rx Node")
+    (date "2026-11-09")
+    (rev "v1.0")
+    (company "Mini Project - Embedded Systems")
+    (comment 1 "ESP32 CSI Receiver with 18650 Battery Backup & Actuators")
+  )
+
+  (lib_symbols
+  )
+
+  (wire (pts (xy 50.8 63.5) (xy 63.5 63.5))
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "00000000-0000-0000-0000-000060000001")
+  )
+
+  (text "Wi-Fi CSI Through-Wall Presence Detection Node\nPower: 5V Mains + 18650 Li-ion Backup\nActuators: 5V Relay (GPIO26) + Active Buzzer (GPIO27)\nStatus: Alert LED (GPIO25) + Link LED (GPIO33)"
+    (at 40 40 0)
+    (effects
+      (font
+        (size 2 2)
+      )
+      (justify left bottom)
+    )
+    (uuid "00000000-0000-0000-0000-000060000002")
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+)
