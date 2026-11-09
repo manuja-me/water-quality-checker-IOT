@@ -13,8 +13,8 @@
 // Put your Home Router or iPhone Hotspot SSID & Password here.
 // (Ensure 2.4 GHz band is enabled on iPhone: "Maximize Compatibility" ON)
 // ==========================================
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "Manuja";
+const char* WIFI_PASS = "AHTBD3B03NE";
 
 // Output Pin Assignments
 #define PIN_RELAY       26

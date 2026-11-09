@@ -15,6 +15,8 @@
 // Wi-Fi & CSI Configuration
 // ==========================================
 #define WIFI_CHANNEL        6
+#define WIFI_SSID           "Manuja"
+#define WIFI_PASS           "AHTBD3B03NE"
 #define CSI_MAX_SUBCARRIERS 64
 
 // ==========================================
