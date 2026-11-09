@@ -10,7 +10,7 @@ import json
 import random
 import argparse
 from urllib.parse import urlparse, parse_qs
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from threading import Thread, Lock
 from collections import deque
 
@@ -67,45 +67,49 @@ def run_serial_listener(port, baudrate):
         last_state = -1
         while True:
             line = ser.readline().decode('utf-8', errors='ignore').strip()
-            if line.startswith("$CSI"):
-                parts = line.split(',')
-                # $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
-                if len(parts) >= 7:
-                    rssi = int(parts[2])
-                    raw_var = float(parts[3])
-                    ema_var = float(parts[4])
-                    baseline = float(parts[5])
-                    state_id = int(parts[6])
+            if "$CSI" in line:
+                try:
+                    csi_start = line.find("$CSI")
+                    parts = line[csi_start:].split(',')
+                    # Format: $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
+                    if len(parts) >= 7 and parts[0] == "$CSI":
+                        rssi = int(parts[2])
+                        raw_var = float(parts[3])
+                        ema_var = float(parts[4])
+                        baseline = float(parts[5])
+                        state_id = int(parts[6])
 
-                    name, count, targets = resolve_state(state_id, ema_var, baseline)
-                    event = None
-                    if state_id != last_state:
-                        event = f"State Shift: {name} (EMA: {ema_var:.1f}, Base: {baseline:.1f})"
-                        last_state = state_id
+                        name, count, targets = resolve_state(state_id, ema_var, baseline)
+                        event = None
+                        if state_id != last_state:
+                            event = f"State Shift: {name} (EMA: {ema_var:.1f}, Base: {baseline:.1f})"
+                            last_state = state_id
+                            with telemetry_lock:
+                                session_log_records.append({
+                                    "time": time.strftime("%H:%M:%S"),
+                                    "case": "Live Hardware",
+                                    "state": name,
+                                    "raw_var": raw_var,
+                                    "ema_var": ema_var,
+                                    "baseline": baseline,
+                                    "event": event
+                                })
+
                         with telemetry_lock:
-                            session_log_records.append({
-                                "time": time.strftime("%H:%M:%S"),
-                                "case": "Live Hardware",
-                                "state": name,
+                            latest_data = {
+                                "rssi": rssi,
                                 "raw_var": raw_var,
                                 "ema_var": ema_var,
                                 "baseline": baseline,
+                                "state_id": state_id,
+                                "state_name": name,
+                                "occupant_count": count,
+                                "active_edge_case": "Live Hardware Stream",
+                                "targets": targets,
                                 "event": event
-                            })
-
-                    with telemetry_lock:
-                        latest_data = {
-                            "rssi": rssi,
-                            "raw_var": raw_var,
-                            "ema_var": ema_var,
-                            "baseline": baseline,
-                            "state_id": state_id,
-                            "state_name": name,
-                            "occupant_count": count,
-                            "active_edge_case": "Live Hardware Stream",
-                            "targets": targets,
-                            "event": event
-                        }
+                            }
+                except (ValueError, IndexError):
+                    continue
     except Exception as e:
         print(f"[!] Serial error: {e}. Switching to edge-case mock generator.")
         run_mock_generator()
@@ -247,7 +251,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 try:
                     self.wfile.write(f"data: {payload}\n\n".encode('utf-8'))
                     self.wfile.flush()
-                except (BrokenPipeError, ConnectionResetError):
+                except Exception:
                     break
                 time.sleep(0.08)
         elif parsed.path == '/trigger-edge-case':
@@ -313,7 +317,7 @@ def main():
         worker = Thread(target=run_serial_listener, args=(args.port, args.baud), daemon=True)
     worker.start()
 
-    server = HTTPServer(('0.0.0.0', args.http_port), DashboardHandler)
+    server = ThreadingHTTPServer(('0.0.0.0', args.http_port), DashboardHandler)
     print(f"[*] Edge-Case Dashboard running at http://localhost:{args.http_port}")
     try:
         server.serve_forever()
