@@ -3,1094 +3,2523 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AuraSense | Wi-Fi CSI Edge Intelligence System</title>
+  <title>SPECTRA // CSI - Wi-Fi Through-Wall Surveillance & RF Radar</title>
   <style>
     :root {
-      --bg-base: #06090e;
-      --bg-surface: #0c121d;
-      --bg-card: rgba(15, 23, 42, 0.75);
-      --bg-glass: rgba(17, 24, 39, 0.6);
-      --border-subtle: rgba(255, 255, 255, 0.07);
-      --border-active: rgba(56, 189, 248, 0.4);
-      --border-card: rgba(148, 163, 184, 0.12);
+      --bg-void: #05070d;
+      --bg-panel: #090e1a;
+      --bg-card: rgba(13, 20, 36, 0.88);
+      --bg-surface: #0f182c;
+      --bg-chip: rgba(255, 255, 255, 0.04);
 
-      --accent-cyan: #38bdf8;
-      --accent-blue: #0284c7;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(0, 240, 255, 0.45);
+      --border-bright: rgba(255, 255, 255, 0.18);
+
+      --cyan-rf: #00f0ff;
+      --cyan-glow: rgba(0, 240, 255, 0.25);
       --emerald-safe: #10b981;
-      --amber-warn: #f59e0b;
-      --crimson-alert: #ef4444;
-      --purple-static: #8b5cf6;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --amber-motion: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --crimson-threat: #ef4444;
+      --crimson-glow: rgba(239, 68, 68, 0.28);
+      --violet-vital: #a855f7;
+      --violet-glow: rgba(168, 85, 247, 0.25);
 
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --text-bright: #f8fafc;
+      --text-mid: #94a3b8;
       --text-dim: #64748b;
+      --text-mono-dim: #475569;
 
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
-      --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, monospace;
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, "Fira Code", monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--font-sans);
-      background-color: var(--bg-base);
-      background-image: 
-        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 45%);
-      color: var(--text-main);
-      padding: 16px 20px;
-      min-height: 100vh;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Top Navigation Bar */
-    header {
+    body {
+      font-family: var(--font-ui);
+      background-color: var(--bg-void);
+      background-image: 
+        radial-gradient(ellipse at 50% -15%, rgba(0, 240, 255, 0.08) 0%, transparent 65%),
+        radial-gradient(circle at 95% 95%, rgba(168, 85, 247, 0.04) 0%, transparent 50%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      color: var(--text-bright);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 16px;
+      overflow-x: hidden;
+    }
+
+    /* =========================================================================
+       Header & Command Banner
+       ========================================================================= */
+    header.command-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 18px;
-      background: var(--bg-glass);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      margin-bottom: 14px;
+      border-radius: 10px;
+      backdrop-filter: blur(20px);
+      margin-bottom: 10px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
-    .brand {
+    .brand-cluster {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-logo {
-      width: 32px;
-      height: 32px;
+    .brand-emblem {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #091a2e 0%, #0d2847 100%);
+      border: 1px solid var(--cyan-rf);
       border-radius: 8px;
-      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+      box-shadow: 0 0 14px var(--cyan-glow);
     }
 
-    .brand-logo svg {
-      width: 18px;
-      height: 18px;
-      fill: #ffffff;
+    .brand-emblem svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--cyan-rf);
+      stroke-width: 2;
+      fill: none;
     }
 
-    .brand-text h1 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    .brand-title h1 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
-    .brand-text .version-tag {
+    .badge-subsystem {
+      font-family: var(--font-mono);
       font-size: 0.65rem;
-      padding: 2px 6px;
-      background: rgba(56, 189, 248, 0.12);
-      color: var(--accent-cyan);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      font-weight: 700;
+      padding: 2px 7px;
       border-radius: 4px;
-      font-family: var(--font-mono);
-      font-weight: 600;
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--cyan-rf);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      letter-spacing: 0.04em;
     }
 
-    .brand-text p {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 1px;
-    }
-
-    .header-telemetry {
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-mid);
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
+      margin-top: 2px;
+      flex-wrap: wrap;
     }
 
-    .status-badge {
-      display: inline-flex;
+    .brand-subtitle span.spec-token {
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+    }
+
+    /* Master Threat State HUD in Header */
+    .master-hud {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: all 0.25s ease;
+    }
+
+    .status-banner .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    .status-banner.state-clear {
+      background: rgba(16, 185, 129, 0.14);
+      color: var(--emerald-safe);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-banner.state-motion {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber-motion);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      animation: alertPulse 1.8s infinite;
+    }
+
+    .status-banner.state-crowd {
+      background: rgba(239, 68, 68, 0.18);
+      color: var(--crimson-threat);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      animation: alertPulse 0.9s infinite;
+    }
+
+    .status-banner.state-vital {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--violet-vital);
+      border: 1px solid rgba(168, 85, 247, 0.45);
+    }
+
+    .status-banner.state-loss {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--crimson-threat);
+      border: 1px solid rgba(239, 68, 68, 0.65);
+      animation: alertPulse 0.6s infinite;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+      50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.45); }
+    }
+
+    .telemetry-pills {
+      display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.78rem;
+    }
+
+    .telemetry-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 10px;
+      border-radius: 6px;
       font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-mid);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .telemetry-chip b {
+      color: var(--text-bright);
       font-weight: 600;
-      letter-spacing: 0.02em;
+    }
+
+    .btn-audio-toggle {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-mid);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.2s ease;
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 8px currentColor;
+    .btn-audio-toggle:hover {
+      border-color: var(--cyan-rf);
+      color: var(--text-bright);
     }
 
-    .status-ok {
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--emerald-safe);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+    .btn-audio-toggle.active {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: var(--cyan-rf);
+      color: var(--cyan-rf);
+      box-shadow: 0 0 10px var(--cyan-glow);
     }
 
-    .status-warn {
-      background: rgba(245, 158, 11, 0.12);
-      color: var(--amber-warn);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-    }
-
-    .status-alert {
-      background: rgba(239, 68, 68, 0.14);
-      color: var(--crimson-alert);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      animation: pulseAlert 1.5s infinite;
-    }
-
-    .status-static {
-      background: rgba(139, 92, 246, 0.14);
-      color: var(--purple-static);
-      border: 1px solid rgba(139, 92, 246, 0.35);
-    }
-
-    @keyframes pulseAlert {
-      0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
-      50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.35); }
-    }
-
-    /* Simulation & Edge Case Toolbar */
-    .toolbar {
+    /* =========================================================================
+       Scenario Commander Bar
+       ========================================================================= */
+    .scenario-deck {
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 10px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
+      gap: 8px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
       border-radius: 10px;
       padding: 8px 14px;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
-    .toolbar-label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-dim);
+    .scenario-title {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .scenario-group {
+    .scenario-title svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--cyan-rf);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .scenario-pills {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       align-items: center;
     }
 
-    .btn-scenario {
+    .btn-scenario-pill {
       background: rgba(255, 255, 255, 0.03);
-      color: var(--text-muted);
       border: 1px solid var(--border-subtle);
-      padding: 6px 12px;
+      color: var(--text-mid);
+      padding: 5px 11px;
       border-radius: 6px;
-      font-size: 0.78rem;
-      font-family: var(--font-sans);
+      font-size: 0.74rem;
+      font-family: var(--font-ui);
+      font-weight: 500;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .btn-scenario:hover {
+    .btn-scenario-pill:hover {
       background: rgba(255, 255, 255, 0.08);
-      color: var(--text-main);
-      border-color: rgba(255, 255, 255, 0.18);
+      color: var(--text-bright);
+      border-color: var(--border-bright);
     }
 
-    .btn-scenario.active {
-      background: rgba(56, 189, 248, 0.14);
-      color: var(--accent-cyan);
-      border-color: var(--accent-cyan);
+    .btn-scenario-pill.active {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: var(--cyan-rf);
+      color: var(--cyan-rf);
       font-weight: 600;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
     }
 
-    /* Main Responsive Grid */
-    .grid {
+    .btn-scenario-pill.active-auto-executing {
+      border-color: var(--amber-motion);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-scenario-pill .pill-num {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      opacity: 0.6;
+    }
+
+    .scenario-dsp-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--cyan-rf);
+      background: rgba(0, 240, 255, 0.06);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* =========================================================================
+       Main Grid Layout (2 Columns)
+       ========================================================================= */
+    .dashboard-layout {
       display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      grid-gap: 16px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+      gap: 12px;
+      flex: 1;
+      align-items: stretch;
     }
 
-    @media (max-width: 1024px) {
-      .grid { grid-template-columns: 1fr; }
+    @media (max-width: 1120px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
     }
 
-    .card {
+    .panel-box {
       background: var(--bg-card);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border-card);
-      border-radius: 12px;
-      padding: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .panel-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 14px;
+      right: 14px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .panel-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-heading svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--cyan-rf);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* Viewport Switcher Controls */
+    .segmented-tabs {
+      display: flex;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-bright);
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.09);
+      color: #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Main Viewport Container */
+    .viewport-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      background: #020409;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    video#arWebcamVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      filter: brightness(0.65) contrast(1.15) saturate(0.85);
+    }
+
+    canvas#spatialCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Viewport Floating HUD Overlays */
+    .viewport-hud-bottom {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .hud-chip {
+      background: rgba(4, 7, 13, 0.82);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-mid);
+      pointer-events: auto;
+    }
+
+    .hud-controls-right {
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .hud-action-btn {
+      background: rgba(9, 13, 21, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-mid);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .hud-action-btn:hover {
+      border-color: var(--cyan-rf);
+      color: var(--text-bright);
+    }
+
+    .hud-action-btn.active {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: var(--cyan-rf);
+      color: var(--cyan-rf);
+    }
+
+    /* Real-Time Chart Deck */
+    .chart-container-box {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: #020409;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    canvas#chartCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .chart-legend-overlay {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(4, 7, 13, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.64rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-line {
+      width: 12px;
+      height: 2px;
+      border-radius: 1px;
+    }
+
+    #chart-hover-hud {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-mid);
+      background: rgba(4, 7, 13, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 3px 8px;
+      pointer-events: none;
+    }
+
+    /* KPI Metrics Cluster */
+    .kpi-matrix {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 680px) {
+      .kpi-matrix {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      position: relative;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .card-title {
-      font-size: 0.84rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .card-title svg {
-      width: 15px;
-      height: 15px;
-      stroke: var(--accent-cyan);
-    }
-
-    /* Segmented View Switcher */
-    .segmented-control {
-      display: inline-flex;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 3px;
-    }
-
-    .segment-btn {
-      background: transparent;
-      color: var(--text-dim);
-      border: none;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.74rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .segment-btn:hover {
-      color: var(--text-main);
-    }
-
-    .segment-btn.active {
-      background: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-    }
-
-    /* Canvas Containers */
-    .canvas-viewport {
-      position: relative;
-      width: 100%;
-      height: 310px;
-      background: #020408;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    video#webcamFeed {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: none;
-      filter: brightness(0.65) contrast(1.15) saturate(0.9);
-    }
-
-    canvas#mainCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      display: block;
-    }
-
-    canvas#chartCanvas {
-      display: block;
-      width: 100%;
-      height: 310px;
-      background: #020408;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    /* KPI Metrics Cluster */
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    @media (max-width: 640px) {
-      .kpi-row { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    .kpi-card {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 12px 14px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .kpi-card::before {
+    .metric-card::before {
       content: "";
       position: absolute;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       height: 2px;
       background: var(--border-subtle);
     }
 
-    .kpi-card.highlight-cyan::before { background: var(--accent-cyan); }
-    .kpi-card.highlight-emerald::before { background: var(--emerald-safe); }
-    .kpi-card.highlight-amber::before { background: var(--amber-warn); }
-    .kpi-card.highlight-purple::before { background: var(--purple-static); }
+    .metric-card.accent-cyan::before { background: var(--cyan-rf); }
+    .metric-card.accent-emerald::before { background: var(--emerald-safe); }
+    .metric-card.accent-amber::before { background: var(--amber-motion); }
+    .metric-card.accent-violet::before { background: var(--violet-vital); }
 
-    .kpi-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--text-dim);
+    .metric-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 4px;
     }
 
-    .kpi-value {
-      font-size: 1.4rem;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      font-variant-numeric: tabular-nums;
-      color: #ffffff;
-      line-height: 1.2;
-    }
-
-    .kpi-sub {
+    .metric-label {
       font-size: 0.68rem;
-      color: var(--text-dim);
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* Gauge Canvas */
-    canvas#gaugeCanvas {
-      display: block;
-      width: 100%;
-      height: 100px;
-      background: #020408;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    /* Event Terminal */
-    .terminal-container {
-      background: #020408;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 8px;
-      height: 145px;
-      overflow-y: auto;
-      padding: 10px 12px;
-      font-family: var(--font-mono);
-      font-size: 0.74rem;
-      scrollbar-width: thin;
-      scrollbar-color: #334155 #020408;
-    }
-
-    .terminal-item {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 5px;
-      line-height: 1.4;
-    }
-
-    .terminal-time {
-      color: var(--text-dim);
-      font-size: 0.68rem;
-      flex-shrink: 0;
-    }
-
-    .terminal-tag {
-      font-size: 0.64rem;
-      padding: 1px 5px;
-      border-radius: 3px;
+      font-family: var(--font-ui);
       font-weight: 600;
-      flex-shrink: 0;
-    }
-
-    .terminal-text {
-      color: var(--text-main);
-      word-break: break-all;
-    }
-
-    .btn-icon {
-      background: transparent;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       color: var(--text-dim);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 0.72rem;
-      display: inline-flex;
+    }
+
+    .metric-subtag {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-mono-dim);
+    }
+
+    .metric-number {
+      font-family: var(--font-mono);
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      line-height: 1.1;
+      margin: 2px 0;
+    }
+
+    .metric-footer {
+      font-size: 0.66rem;
+      color: var(--text-mid);
+      display: flex;
       align-items: center;
       gap: 6px;
+      margin-top: 4px;
+    }
+
+    .metric-footer .indicator-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Edge Hardware Actuator Matrix & Intensity Gauge */
+    .actuator-gauge-deck {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .actuator-gauge-deck {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .actuator-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .actuator-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .actuator-tile {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 4px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .actuator-tile .act-name {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .actuator-tile .act-gpio {
+      font-size: 0.54rem;
+      color: var(--text-mono-dim);
+      font-family: var(--font-mono);
+    }
+
+    .actuator-tile .act-state {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    .actuator-tile.state-on {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.09);
+      color: var(--amber-motion);
+    }
+
+    .actuator-tile.state-alarm {
+      border-color: rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--crimson-threat);
+    }
+
+    .actuator-tile.state-idle {
+      color: var(--emerald-safe);
+    }
+
+    /* Movement Disturbance Multi-Zone Bar */
+    .gauge-wrapper {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .gauge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+    }
+
+    canvas#gaugeCanvas {
+      width: 100%;
+      height: 44px;
+      display: block;
+      margin: 4px 0;
+    }
+
+    /* Terminal & Event Audit Deck - Flexes to balance column */
+    .terminal-deck {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 230px;
+    }
+
+    .terminal-box {
+      background: #020409;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .terminal-action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .terminal-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .terminal-filter-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
-    .btn-icon:hover {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-main);
-      border-color: rgba(255, 255, 255, 0.2);
+    .terminal-filter-btn:hover {
+      color: var(--text-bright);
+    }
+
+    .terminal-filter-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--cyan-rf);
+      border-color: rgba(0, 240, 255, 0.35);
+    }
+
+    .terminal-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-terminal-action {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-mid);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-terminal-action:hover {
+      border-color: var(--cyan-rf);
+      color: var(--text-bright);
+    }
+
+    .terminal-logs-window {
+      flex: 1;
+      min-height: 180px;
+      max-height: 290px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+
+    .log-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      line-height: 1.4;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: background 0.15s ease;
+    }
+
+    .log-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .log-time {
+      color: var(--text-dim);
+      font-size: 0.64rem;
+      flex-shrink: 0;
+    }
+
+    .log-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }
+
+    .log-msg {
+      color: var(--text-bright);
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header Bar -->
-  <header>
-    <div class="brand">
-      <div class="brand-logo">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+  <!-- Top Tactical Command Header -->
+  <header class="command-header">
+    <div class="brand-cluster">
+      <div class="brand-emblem">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-8c0-2.76 2.24-5 5-5s5 2.24 5 5-2.24 5-5 5-5-2.24-5-5zm3 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg>
       </div>
-      <div class="brand-text">
-        <h1>AuraSense <span class="version-tag">EDGE DSP v2.4</span></h1>
-        <p>Wi-Fi 802.11 CSI Through-Wall Presence & Multi-Occupant Radar</p>
+      <div class="brand-title">
+        <h1>SPECTRA // CSI <span class="badge-subsystem">v2.4 EMBEDDED DSP</span></h1>
+        <div class="brand-subtitle">
+          <span>Wi-Fi 802.11n Through-Wall Radar</span>
+          <span class="spec-token">CH 6 (2437 MHz)</span>
+          <span class="spec-token">ESP32 80Hz ILLUMINATOR</span>
+        </div>
       </div>
     </div>
 
-    <div class="header-telemetry">
-      <div id="status-pill" class="status-badge status-ok">
-        <div class="status-dot"></div>
-        <span id="status-text">ZONE CLEAR</span>
+    <!-- Master Threat Status Banner -->
+    <div class="master-hud">
+      <div id="master-status-banner" class="status-banner state-clear">
+        <div class="pulse-dot"></div>
+        <span id="master-status-text">ZONE SECURE // AMBIENT QUIET</span>
       </div>
-      <div id="link-pill" class="status-badge status-ok">
-        <div class="status-dot"></div>
-        <span id="link-text">LINK: 60 Hz (-58 dBm)</span>
+
+      <div class="telemetry-pills">
+        <div id="link-chip" class="telemetry-chip">
+          <span>LINK:</span>
+          <b id="link-rate-text">80 Hz</b>
+          <span id="rssi-text">(-58 dBm)</span>
+        </div>
+
+        <div class="telemetry-chip">
+          <span>CLOCK:</span>
+          <b id="clock-display">00:00:00</b>
+        </div>
+
+        <button id="btn-audio" class="btn-audio-toggle" onclick="toggleAudio()" title="Toggle Tactical Synth Audio Bleeps">
+          <span id="audio-icon">🔇</span>
+          <span id="audio-label">AUDIO MUTED</span>
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Interactive Edge-Case Testing Bar -->
-  <div class="toolbar">
-    <div class="toolbar-label">Scenario Presets:</div>
-    <div class="scenario-group">
-      <button id="btn-auto" class="btn-scenario active" onclick="setCase('auto', this)">🔄 Auto Cycle</button>
-      <button id="btn-quiet" class="btn-scenario" onclick="setCase('quiet', this)">1. Baseline Quiet</button>
-      <button id="btn-single_walk" class="btn-scenario" onclick="setCase('single_walk', this)">2. Single Human Motion</button>
-      <button id="btn-static_presence" class="btn-scenario" onclick="setCase('static_presence', this)">3. Seated / Still</button>
-      <button id="btn-microwave_spike" class="btn-scenario" onclick="setCase('microwave_spike', this)">4. EMI / Microwave Outlier</button>
-      <button id="btn-multi_human" class="btn-scenario" onclick="setCase('multi_human', this)">5. Multi-Occupant Crowd</button>
-      <button id="btn-packet_loss" class="btn-scenario" onclick="setCase('packet_loss', this)">6. Link Interruption</button>
+  <!-- Mission Scenario Control Deck -->
+  <div class="scenario-deck">
+    <div class="scenario-title">
+      <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      <span>Mission Presets:</span>
+    </div>
+
+    <div class="scenario-pills">
+      <button id="case-auto" class="btn-scenario-pill active" onclick="activateScenario('auto', this)">
+        <span>🔄 Auto Cycle</span>
+      </button>
+      <button id="case-quiet" class="btn-scenario-pill" onclick="activateScenario('quiet', this)">
+        <span class="pill-num">01</span>
+        <span>Quiet Baseline</span>
+      </button>
+      <button id="case-single_walk" class="btn-scenario-pill" onclick="activateScenario('single_walk', this)">
+        <span class="pill-num">02</span>
+        <span>Single Walking</span>
+      </button>
+      <button id="case-static_presence" class="btn-scenario-pill" onclick="activateScenario('static_presence', this)">
+        <span class="pill-num">03</span>
+        <span>Still / Breathing</span>
+      </button>
+      <button id="case-microwave_spike" class="btn-scenario-pill" onclick="activateScenario('microwave_spike', this)">
+        <span class="pill-num">04</span>
+        <span>EMI / Microwave</span>
+      </button>
+      <button id="case-multi_human" class="btn-scenario-pill" onclick="activateScenario('multi_human', this)">
+        <span class="pill-num">05</span>
+        <span>Multi-Occupant</span>
+      </button>
+      <button id="case-packet_loss" class="btn-scenario-pill" onclick="activateScenario('packet_loss', this)">
+        <span class="pill-num">06</span>
+        <span>Link Dropout</span>
+      </button>
+    </div>
+
+    <div id="scenario-active-dsp" class="scenario-dsp-badge">
+      <span>DSP Active:</span>
+      <b id="scenario-dsp-text">Sliding Window (N=40) + EMA Smoothing (&alpha;=0.25)</b>
     </div>
   </div>
 
-  <!-- Primary Dashboard Grid -->
-  <div class="grid">
+  <!-- Primary Dashboard Layout (2 Columns) -->
+  <main class="dashboard-layout">
 
-    <!-- Card 1: Spatial Monitoring Viewport -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-          <span id="view-title">Spatial Radar & Fresnel Multipath Overlay</span>
+    <!-- Column 1: Spatial Radar & 3D Through-Wall Visualizer + Chart -->
+    <section class="panel-box">
+      <div class="panel-header">
+        <div class="panel-heading">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span id="viewport-heading">Spatial Through-Wall Situational Radar</span>
         </div>
-        <div style="display:flex; gap:8px;">
-          <div class="segmented-control">
-            <button id="btn-mode-cam" class="segment-btn active" onclick="setViewMode('camera')">Room Camera</button>
-            <button id="btn-mode-radar" class="segment-btn" onclick="setViewMode('radar')">Radar Sweep</button>
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="segmented-tabs">
+            <button id="tab-3d" class="tab-btn active" onclick="switchSpatialMode('3d_room')">3D Room</button>
+            <button id="tab-radar" class="tab-btn" onclick="switchSpatialMode('polar_radar')">Polar Scope</button>
+            <button id="tab-matrix" class="tab-btn" onclick="switchSpatialMode('subcarrier_matrix')">Spectrogram</button>
           </div>
-          <button id="btn-webcam" class="btn-icon" onclick="toggleWebcam()">📹 Webcam AR</button>
+          <button id="btn-ar-webcam" class="hud-action-btn" onclick="toggleWebcamAR()">📹 AR Feed</button>
         </div>
       </div>
-      <div class="canvas-viewport">
-        <video id="webcamFeed" autoplay playsinline muted></video>
-        <canvas id="mainCanvas" width="600" height="310"></canvas>
-      </div>
-    </div>
 
-    <!-- Card 2: CSI Spectral Disruption & Baseline Drift -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17l-5-5-3 3-4-7"/></svg>
-          <span>Real-Time Disturbance Variance $V(t)$</span>
+      <!-- Main Interactive Viewport Canvas -->
+      <div class="viewport-canvas-wrapper" id="viewport-container">
+        <video id="arWebcamVideo" autoplay playsinline muted></video>
+        <canvas id="spatialCanvas"></canvas>
+
+        <div class="viewport-hud-bottom">
+          <div class="hud-chip" id="hud-barrier-tag">
+            BARRIER: 12mm Gypsum Drywall (-2.8 dB Attenuation)
+          </div>
+          <div class="hud-controls-right">
+            <button id="btn-toggle-fresnel" class="hud-action-btn active" onclick="toggleFresnel()">Wavefronts: ON</button>
+            <button id="btn-toggle-grid" class="hud-action-btn active" onclick="toggleGrid()">Grid: ON</button>
+            <button class="hud-action-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+          </div>
         </div>
-        <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-dim);">
-          T1: <b style="color:var(--amber-warn);">+16.0</b> | T2: <b style="color:var(--crimson-alert);">+35.0</b>
-        </span>
       </div>
-      <canvas id="chartCanvas" width="500" height="310"></canvas>
-    </div>
 
-    <!-- Card 3: Quantitative Edge Metrics -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+      <!-- Real-Time CSI Disturbance & Dual-Threshold Graph -->
+      <div style="margin-top:14px;">
+        <div class="panel-header" style="margin-bottom:6px;">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-3 3-4-7"/></svg>
+            <span>Subcarrier Disruption Spectrum & Hysteresis Thresholds</span>
+          </div>
+          <div style="font-family:var(--font-mono); font-size:0.68rem; color:var(--text-dim);">
+            T_LOW: <span style="color:var(--emerald-safe);">8.0</span> | 
+            T_HIGH: <span style="color:var(--amber-motion);">18.5</span> | 
+            T_MULTI: <span style="color:var(--crimson-threat);">35.0</span>
+          </div>
+        </div>
+
+        <div class="chart-container-box">
+          <canvas id="chartCanvas"></canvas>
+          <div class="chart-legend-overlay">
+            <div class="legend-item">
+              <div class="legend-line" style="background:#00f0ff;"></div>
+              <span>EMA S(t)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background:rgba(148,163,184,0.45);"></div>
+              <span>Raw V(t)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background:#10b981; border:1px dashed #10b981;"></div>
+              <span>Base B(t)</span>
+            </div>
+          </div>
+          <div id="chart-hover-hud">CURSOR: Real-time telemetry monitoring</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Column 2: Quantitative Edge DSP Telemetry, Actuators & Audit Console -->
+    <section class="panel-box">
+      <div class="panel-header">
+        <div class="panel-heading">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
           <span>Deterministic Edge DSP State</span>
         </div>
-        <span id="active-scenario-tag" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent-cyan);">Mode: Auto Cycle</span>
+        <div class="hud-chip" id="dsp-mode-chip">MODE: AUTO ROTATION</div>
       </div>
 
-      <div class="kpi-row">
-        <div class="kpi-card highlight-cyan">
-          <div class="kpi-label">Disruption ($V_{\text{EMA}}$)</div>
-          <div id="kpi-ema" class="kpi-value">1.42</div>
-          <div class="kpi-sub">Raw: <span id="kpi-raw" style="color:#fff;">1.50</span></div>
+      <!-- KPI Metrics Grid (4 items) -->
+      <div class="kpi-matrix">
+        <div class="metric-card accent-cyan">
+          <div class="metric-label-row">
+            <span class="metric-label">Disruption S(t)</span>
+            <span class="metric-subtag">&alpha;=0.25</span>
+          </div>
+          <div id="metric-ema" class="metric-number">1.40</div>
+          <div class="metric-footer">
+            <div class="indicator-dot" style="background:var(--cyan-rf);"></div>
+            <span>Raw: <b id="metric-raw" style="color:#fff;">1.52</b></span>
+          </div>
         </div>
 
-        <div class="kpi-card highlight-emerald">
-          <div class="kpi-label">Adaptive Base ($B_t$)</div>
-          <div id="kpi-base" class="kpi-value">1.20</div>
-          <div class="kpi-sub">Floor: Stable</div>
+        <div class="metric-card accent-emerald">
+          <div class="metric-label-row">
+            <span class="metric-label">Adaptive Base</span>
+            <span class="metric-subtag">B(t)</span>
+          </div>
+          <div id="metric-base" class="metric-number">1.20</div>
+          <div class="metric-footer">
+            <div class="indicator-dot" style="background:var(--emerald-safe);"></div>
+            <span id="metric-base-state">Noise Floor: Calibrated</span>
+          </div>
         </div>
 
-        <div class="kpi-card highlight-amber">
-          <div class="kpi-label">Occupancy Count</div>
-          <div id="kpi-count" class="kpi-value" style="color:var(--emerald-safe);">0</div>
-          <div class="kpi-sub" id="kpi-occupant-desc">Room Empty</div>
+        <div class="metric-card accent-amber">
+          <div class="metric-label-row">
+            <span class="metric-label">Occupancy</span>
+            <span class="metric-subtag">COUNT</span>
+          </div>
+          <div id="metric-count" class="metric-number" style="color:var(--emerald-safe);">0</div>
+          <div class="metric-footer">
+            <div class="indicator-dot" style="background:var(--emerald-safe);"></div>
+            <span id="metric-occupant-desc">Zone Empty</span>
+          </div>
         </div>
 
-        <div class="kpi-card highlight-purple">
-          <div class="kpi-label">Current State</div>
-          <div id="kpi-state" class="kpi-value" style="font-size:1.05rem; color:var(--emerald-safe);">EMPTY</div>
-          <div class="kpi-sub">Refractory: Safe</div>
+        <div class="metric-card accent-violet">
+          <div class="metric-label-row">
+            <span class="metric-label">Threat Latch</span>
+            <span class="metric-subtag">SCHMITT</span>
+          </div>
+          <div id="metric-state" class="metric-number" style="font-size:1.15rem; color:var(--emerald-safe);">QUIET</div>
+          <div class="metric-footer">
+            <div class="indicator-dot" style="background:var(--emerald-safe);"></div>
+            <span id="metric-latch-desc">Holdoff: Inactive</span>
+          </div>
         </div>
       </div>
 
-      <canvas id="gaugeCanvas" width="600" height="90"></canvas>
-    </div>
-
-    <!-- Card 4: Event Logging & Audit Trail -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-          <span>Edge Security Event Log</span>
+      <!-- Actuator Matrix & Movement Intensity Gauge Deck -->
+      <div class="actuator-gauge-deck">
+        <div class="actuator-card">
+          <div class="gauge-header">
+            <span style="font-weight:700; color:var(--text-mid); text-transform:uppercase;">ESP32 Actuator Bus</span>
+            <span style="color:var(--text-dim); font-size:0.62rem;">5V RAIL / TP4056 BATT</span>
+          </div>
+          <div class="actuator-grid">
+            <div id="act-relay" class="actuator-tile state-idle">
+              <div class="act-name">Relay (K1)</div>
+              <div class="act-gpio">GPIO 26</div>
+              <div id="act-relay-state" class="act-state">OPEN</div>
+            </div>
+            <div id="act-buzzer" class="actuator-tile state-idle">
+              <div class="act-name">Buzzer (5V)</div>
+              <div class="act-gpio">GPIO 27</div>
+              <div id="act-buzzer-state" class="act-state">SILENT</div>
+            </div>
+            <div id="act-led" class="actuator-tile state-idle">
+              <div class="act-name">Alert LED</div>
+              <div class="act-gpio">GPIO 25</div>
+              <div id="act-led-state" class="act-state">OFF</div>
+            </div>
+            <div id="act-link" class="actuator-tile state-idle">
+              <div class="act-name">Link Sync</div>
+              <div class="act-gpio">GPIO 33</div>
+              <div id="act-link-state" class="act-state">LOCKED</div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-icon" onclick="window.location.href='/export-log'">📥 Export CSV</button>
-          <button class="btn-icon" onclick="clearTerminal()">🗑️ Clear</button>
+
+        <div class="gauge-wrapper">
+          <div class="gauge-header">
+            <span style="font-weight:700; color:var(--text-mid); text-transform:uppercase;">Movement Intensity</span>
+            <span id="gauge-readout" style="color:var(--cyan-rf); font-weight:700;">1.40 / 85.0</span>
+          </div>
+          <canvas id="gaugeCanvas"></canvas>
+          <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.58rem; color:var(--text-dim);">
+            <span>QUIET</span>
+            <span>T_LOW(8)</span>
+            <span>T_HIGH(18.5)</span>
+            <span>CROWD(35+)</span>
+          </div>
         </div>
       </div>
 
-      <div id="terminal-list" class="terminal-container">
-        <div class="terminal-item">
-          <span class="terminal-time">[SYS INIT]</span>
-          <span class="terminal-tag" style="background:rgba(56,189,248,0.15); color:var(--accent-cyan);">READY</span>
-          <span class="terminal-text">Edge DSP telemetry connected. Monitoring Wi-Fi CSI carrier space.</span>
+      <!-- Event Audit Trail & Console -->
+      <div class="terminal-deck">
+        <div class="terminal-box">
+          <div class="terminal-action-row">
+            <div class="terminal-tabs">
+              <button class="terminal-filter-btn active" onclick="setTerminalFilter('all', this)">ALL EVENTS</button>
+              <button class="terminal-filter-btn" onclick="setTerminalFilter('threat', this)">SECURITY ONLY</button>
+              <button class="terminal-filter-btn" onclick="setTerminalFilter('dsp', this)">DSP / REJECTIONS</button>
+            </div>
+            <div class="terminal-actions">
+              <button class="btn-terminal-action" onclick="exportSessionLog()">
+                <span>📥 Export CSV</span>
+              </button>
+              <button class="btn-terminal-action" onclick="clearTerminalLogs()">
+                <span>🗑️ Clear</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="terminal-stream" class="terminal-logs-window">
+            <div class="log-row" data-cat="dsp">
+              <span class="log-time">[BOOT]</span>
+              <span class="log-badge" style="background:rgba(0,240,255,0.15); color:var(--cyan-rf); border:1px solid rgba(0,240,255,0.35);">READY</span>
+              <span class="log-msg">SPECTRA DSP engine initialized. Listening on /stream for 802.11 CSI frames.</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-  </div>
+    </section>
+  </main>
 
   <script>
-    // Canvas contexts
-    const mainCanvas = document.getElementById('mainCanvas');
-    const mCtx = mainCanvas.getContext('2d');
+    /* =========================================================================
+       SPECTRA // Core Real-Time State & High-Performance Canvas Engines
+       ========================================================================= */
+
+    // Helper: Hex color to RGBA
+    function hexToRgba(hex, alpha) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // High DPI Canvas Resizing
+    function checkCanvasResize(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const targetW = Math.max(Math.round(rect.width * dpr), 10);
+      const targetH = Math.max(Math.round(rect.height * dpr), 10);
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, width: rect.width, height: rect.height };
+    }
+
+    // Canvas elements & context references
+    const spatialCanvas = document.getElementById('spatialCanvas');
     const chartCanvas = document.getElementById('chartCanvas');
-    const cCtx = chartCanvas.getContext('2d');
     const gaugeCanvas = document.getElementById('gaugeCanvas');
-    const gCtx = gaugeCanvas.getContext('2d');
-    const webcamVideo = document.getElementById('webcamFeed');
+    const arWebcam = document.getElementById('arWebcamVideo');
+    const chartHoverHud = document.getElementById('chart-hover-hud');
 
-    let viewMode = 'camera';
-    let useWebcam = false;
-    let history = [];
-    let radarAngle = 0;
-
+    // System Telemetry State
+    let currentRSSI = -58;
     let currentRaw = 1.45;
-    let currentEMA = 1.38;
+    let currentEMA = 1.40;
     let currentBase = 1.20;
     let currentStateId = 0;
     let currentStateName = "EMPTY (QUIET)";
     let currentOccupants = 0;
     let currentTargets = [];
-    let currentRSSI = -58;
+    let currentActiveCase = "auto";
     let lastLoggedEvent = "";
+    let lastRecordedStateId = -1;
 
-    function setViewMode(mode) {
-      viewMode = mode;
-      document.getElementById('btn-mode-cam').classList.toggle('active', mode === 'camera');
-      document.getElementById('btn-mode-radar').classList.toggle('active', mode === 'radar');
-      document.getElementById('view-title').innerText = mode === 'camera' 
-        ? "Spatial Room Camera & Fresnel Multipath Overlay" 
-        : "Polar Spatial Radar & Sector Tracking";
-    }
+    // Viewport & Display Config
+    let spatialMode = '3d_room'; // '3d_room', 'polar_radar', 'subcarrier_matrix'
+    let showFresnel = true;
+    let showGrid = true;
+    let isWebcamAR = false;
+    let radarSweepAngle = 0;
+    const MAX_HISTORY = 120;
+    let telemetryHistory = [];
+    let terminalFilter = 'all';
 
-    async function toggleWebcam() {
-      useWebcam = !useWebcam;
-      const btn = document.getElementById('btn-webcam');
-      if (useWebcam) {
+    // Interactive Chart Hover State
+    let chartMouseX = -1;
+    chartCanvas.addEventListener('mousemove', (e) => {
+      const rect = chartCanvas.getBoundingClientRect();
+      chartMouseX = e.clientX - rect.left;
+      if (telemetryHistory.length > 0) {
+        const step = rect.width / (MAX_HISTORY - 1);
+        const idx = Math.min(Math.max(Math.floor(chartMouseX / step), 0), telemetryHistory.length - 1);
+        const pt = telemetryHistory[idx];
+        if (pt) {
+          const stateNames = {
+            0: "QUIET",
+            1: "SINGLE HUMAN MOTION",
+            2: "MULTI-OCCUPANT CROWD",
+            3: "STATIC PRESENCE (BREATHING)",
+            4: "RF LINK LOSS"
+          };
+          const name = stateNames[pt.state] || `STATE ${pt.state}`;
+          chartHoverHud.innerText = `S(t)=${pt.ema.toFixed(2)} | V(t)=${pt.raw.toFixed(2)} | Base=${pt.base.toFixed(2)} | ${name}`;
+        }
+      }
+    });
+
+    chartCanvas.addEventListener('mouseleave', () => {
+      chartMouseX = -1;
+      chartHoverHud.innerText = 'CURSOR: Real-time telemetry monitoring';
+    });
+
+    // Subcarrier Matrix Simulation Buffer (52 subcarriers x 45 time steps)
+    const NUM_SUBCARRIERS = 52;
+    const MATRIX_STEPS = 45;
+    const subcarrierBuffer = Array.from({ length: NUM_SUBCARRIERS }, () => 
+      Array.from({ length: MATRIX_STEPS }, () => 0.05)
+    );
+
+    // Audio Alert Synthesizer (Web Audio API)
+    let audioContext = null;
+    let audioMuted = true;
+    let lastBeepTime = 0;
+
+    async function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-          webcamVideo.srcObject = stream;
-          webcamVideo.style.display = 'block';
-          btn.style.borderColor = "var(--accent-cyan)";
-          btn.style.color = "var(--accent-cyan)";
-          btn.innerText = "🛑 Disable Webcam";
-          setViewMode('camera');
-        } catch (err) {
-          alert("Webcam access unavailable: " + err.message);
-          useWebcam = false;
-          webcamVideo.style.display = 'none';
-        }
-      } else {
-        if (webcamVideo.srcObject) {
-          webcamVideo.srcObject.getTracks().forEach(t => t.stop());
-        }
-        webcamVideo.style.display = 'none';
-        btn.style.borderColor = "";
-        btn.style.color = "";
-        btn.innerText = "📹 Webcam AR";
+          await audioContext.resume();
+        } catch (e) {}
       }
     }
 
-    function logToTerminal(tag, text, tagColor, textColor="#f8fafc") {
-      const list = document.getElementById('terminal-list');
-      const item = document.createElement('div');
-      item.className = 'terminal-item';
-      const timeStr = new Date().toTimeString().split(' ')[0];
-
-      item.innerHTML = `
-        <span class="terminal-time">[${timeStr}]</span>
-        <span class="terminal-tag" style="background:${tagColor}22; color:${tagColor}; border:1px solid ${tagColor}44;">${tag}</span>
-        <span class="terminal-text" style="color:${textColor};">${text}</span>
-      `;
-      list.prepend(item);
+    async function toggleAudio() {
+      await initAudio();
+      audioMuted = !audioMuted;
+      const btn = document.getElementById('btn-audio');
+      const icon = document.getElementById('audio-icon');
+      const label = document.getElementById('audio-label');
+      if (audioMuted) {
+        btn.classList.remove('active');
+        icon.innerText = "🔇";
+        label.innerText = "AUDIO MUTED";
+      } else {
+        btn.classList.add('active');
+        icon.innerText = "🔊";
+        label.innerText = "AUDIO ACTIVE";
+        playTone(660, 0.08, 'sine');
+      }
     }
 
-    function clearTerminal() {
-      document.getElementById('terminal-list').innerHTML = `
-        <div class="terminal-item">
-          <span class="terminal-time">[${new Date().toTimeString().split(' ')[0]}]</span>
-          <span class="terminal-tag" style="background:rgba(148,163,184,0.15); color:var(--text-dim);">CLEARED</span>
-          <span class="terminal-text" style="color:var(--text-dim);">Log cleared by operator.</span>
-        </div>
-      `;
+    function playTone(freq, duration, type='sine') {
+      if (audioMuted || !audioContext) return;
+      try {
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+        gain.gain.setValueAtTime(0.12, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      } catch (e) {}
     }
 
-    function setCase(caseName, btnElem) {
-      document.querySelectorAll('.btn-scenario').forEach(b => b.classList.remove('active'));
-      if (btnElem) btnElem.classList.add('active');
+    // Viewport Mode Switching
+    function switchSpatialMode(mode) {
+      spatialMode = mode;
+      document.getElementById('tab-3d').classList.toggle('active', mode === '3d_room');
+      document.getElementById('tab-radar').classList.toggle('active', mode === 'polar_radar');
+      document.getElementById('tab-matrix').classList.toggle('active', mode === 'subcarrier_matrix');
 
-      const labels = {
-        'auto': 'Auto Cycle',
-        'quiet': 'Baseline Quiet',
-        'single_walk': 'Single Human Motion',
-        'static_presence': 'Seated / Breathing',
-        'microwave_spike': 'Microwave Outlier',
-        'multi_human': 'Multi-Occupant Crowd',
-        'packet_loss': 'Link Interruption'
+      const headings = {
+        '3d_room': 'Spatial Through-Wall Situational Radar & Fresnel Waves',
+        'polar_radar': 'Polar Planar Azimuth & Range Tracking Radar',
+        'subcarrier_matrix': '52-OFDM Subcarrier Spectral Perturbation Matrix'
       };
-      document.getElementById('active-scenario-tag').innerText = `Preset: ${labels[caseName] || caseName}`;
-      logToTerminal('TRIGGER', `Operator activated scenario: ${labels[caseName] || caseName}`, '#38bdf8');
+      document.getElementById('viewport-heading').innerText = headings[mode] || headings['3d_room'];
+    }
+
+    function toggleFresnel() {
+      showFresnel = !showFresnel;
+      const btn = document.getElementById('btn-toggle-fresnel');
+      btn.classList.toggle('active', showFresnel);
+      btn.innerText = `Wavefronts: ${showFresnel ? 'ON' : 'OFF'}`;
+    }
+
+    function toggleGrid() {
+      showGrid = !showGrid;
+      const btn = document.getElementById('btn-toggle-grid');
+      btn.classList.toggle('active', showGrid);
+      btn.innerText = `Grid: ${showGrid ? 'ON' : 'OFF'}`;
+    }
+
+    async function toggleWebcamAR() {
+      isWebcamAR = !isWebcamAR;
+      const btn = document.getElementById('btn-ar-webcam');
+      if (isWebcamAR) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "environment" }
+          });
+          arWebcam.srcObject = stream;
+          arWebcam.style.display = 'block';
+          btn.classList.add('active');
+          btn.innerText = "🛑 Stop AR";
+          switchSpatialMode('3d_room');
+        } catch (err) {
+          alert("Webcam AR unavailable: " + err.message);
+          isWebcamAR = false;
+          arWebcam.style.display = 'none';
+          btn.classList.remove('active');
+          btn.innerText = "📹 AR Feed";
+        }
+      } else {
+        if (arWebcam.srcObject) {
+          arWebcam.srcObject.getTracks().forEach(t => t.stop());
+        }
+        arWebcam.style.display = 'none';
+        btn.classList.remove('active');
+        btn.innerText = "📹 AR Feed";
+      }
+    }
+
+    function toggleFullscreen() {
+      const container = document.getElementById('viewport-container');
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Non-destructive CSV Session Export (does NOT interrupt SSE connection)
+    function exportSessionLog() {
+      const link = document.createElement('a');
+      link.href = '/export-log';
+      link.download = 'csi_simulation_events.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      appendTerminalLog('dsp', 'EXPORT', 'Session audit log exported to CSV', '#10b981');
+    }
+
+    // Terminal Logging Engine with Safe DOM Text Injection
+    function appendTerminalLog(category, tag, message, color="#00f0ff") {
+      const container = document.getElementById('terminal-stream');
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      row.dataset.cat = category;
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'log-time';
+      const timeStr = new Date().toTimeString().split(' ')[0];
+      timeSpan.textContent = `[${timeStr}]`;
+
+      const badgeSpan = document.createElement('span');
+      badgeSpan.className = 'log-badge';
+      badgeSpan.style.background = hexToRgba(color, 0.18);
+      badgeSpan.style.color = color;
+      badgeSpan.style.border = `1px solid ${hexToRgba(color, 0.45)}`;
+      badgeSpan.textContent = tag;
+
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'log-msg';
+      msgSpan.textContent = message;
+
+      row.appendChild(timeSpan);
+      row.appendChild(badgeSpan);
+      row.appendChild(msgSpan);
+
+      if (terminalFilter !== 'all' && row.dataset.cat !== terminalFilter) {
+        row.style.display = 'none';
+      }
+
+      container.prepend(row);
+      while (container.children.length > 80) {
+        container.removeChild(container.lastChild);
+      }
+    }
+
+    function clearTerminalLogs() {
+      const container = document.getElementById('terminal-stream');
+      container.innerHTML = '';
+      appendTerminalLog('dsp', 'CLEARED', 'Operator cleared console audit trail.', '#94a3b8');
+    }
+
+    function setTerminalFilter(filter, btn) {
+      terminalFilter = filter;
+      document.querySelectorAll('.terminal-filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const rows = document.querySelectorAll('.log-row');
+      rows.forEach(r => {
+        if (filter === 'all' || r.dataset.cat === filter || !r.dataset.cat) {
+          r.style.display = 'flex';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+    }
+
+    // Preset Scenario Activator & DSP explanations
+    const dspDescriptions = {
+      'auto': 'Sliding Window (N=40) + EMA Smoothing (\u03b1=0.25)',
+      'quiet': 'Adaptive Baseline Tracker (\u03b2=0.005): Noise floor stable at 1.20',
+      'single_walk': 'Schmitt Trigger Latch: S(t) \u2265 18.5 -> GPIO 26 Relay latched (dwell 1500ms)',
+      'static_presence': 'Micro-Doppler Respiration (0.9\u2264V\u22644.0): Retention hold active (12s)',
+      'microwave_spike': 'Hampel 3-Sigma Filter: Outlier 95.0 clamped, 3-frame confirmation rejected',
+      'multi_human': 'Dual-Target Energy Matrix: S(t) > 35.0, Crowd alert on GPIO 25 & 27',
+      'packet_loss': 'Packet Watchdog Timeout (350ms): Relays de-energized, Link LED OFF'
+    };
+
+    function activateScenario(caseName, btn) {
+      document.querySelectorAll('.btn-scenario-pill').forEach(b => {
+        b.classList.remove('active');
+        b.classList.remove('active-auto-executing');
+      });
+      if (btn) btn.classList.add('active');
+
+      currentActiveCase = caseName;
+      document.getElementById('scenario-dsp-text').innerText = dspDescriptions[caseName] || dspDescriptions['auto'];
+      document.getElementById('dsp-mode-chip').innerText = `MODE: ${caseName.toUpperCase()}`;
+
+      appendTerminalLog('dsp', 'PRESET', `Activated preset: ${caseName.toUpperCase()} (${dspDescriptions[caseName] || ''})`, '#00f0ff');
       fetch(`/trigger-edge-case?case=${caseName}`);
     }
 
-    // Connect to Server-Sent Events stream
-    const evtSource = new EventSource('/stream');
-    evtSource.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      currentRSSI = data.rssi;
-      currentRaw = data.raw_var;
-      currentEMA = data.ema_var;
-      currentBase = data.baseline;
-      currentStateId = data.state_id;
-      currentStateName = data.state_name;
-      currentOccupants = data.occupant_count;
-      currentTargets = data.targets || [];
-
-      // Update KPI metrics
-      document.getElementById('kpi-ema').innerText = currentEMA.toFixed(2);
-      document.getElementById('kpi-raw').innerText = currentRaw.toFixed(2);
-      document.getElementById('kpi-base').innerText = currentBase.toFixed(2);
-      document.getElementById('kpi-count').innerText = currentOccupants;
-
-      const occDesc = document.getElementById('kpi-occupant-desc');
-      const stateVal = document.getElementById('kpi-state');
-      const statusPill = document.getElementById('status-pill');
-      const statusText = document.getElementById('status-text');
-      const linkPill = document.getElementById('link-pill');
-      const linkText = document.getElementById('link-text');
-
-      linkText.innerText = currentStateId === 4 ? "LINK DOWN (TIMEOUT)" : `LINK: 60 Hz (${currentRSSI} dBm)`;
-      linkPill.className = currentStateId === 4 ? "status-badge status-alert" : "status-badge status-ok";
-
-      if (currentStateId === 0) {
-        stateVal.innerText = "EMPTY";
-        stateVal.style.color = "var(--emerald-safe)";
-        occDesc.innerText = "Room Empty";
-        statusPill.className = "status-badge status-ok";
-        statusText.innerText = "ZONE CLEAR";
-      } else if (currentStateId === 1) {
-        stateVal.innerText = "ACTIVE MOTION";
-        stateVal.style.color = "var(--amber-warn)";
-        occDesc.innerText = "1 Target Detected";
-        statusPill.className = "status-badge status-warn";
-        statusText.innerText = "HUMAN MOTION DETECTED";
-      } else if (currentStateId === 2) {
-        stateVal.innerText = "CROWD DISTURBANCE";
-        stateVal.style.color = "var(--crimson-alert)";
-        occDesc.innerText = `${currentOccupants}+ Humans Detected`;
-        statusPill.className = "status-badge status-alert";
-        statusText.innerText = "HIGH MULTI-OCCUPANT ENERGY";
-      } else if (currentStateId === 3) {
-        stateVal.innerText = "STILL / BREATHING";
-        stateVal.style.color = "var(--purple-static)";
-        occDesc.innerText = "Occupant Seated";
-        statusPill.className = "status-badge status-static";
-        statusText.innerText = "STATIC OCCUPANT HOLD";
-      } else if (currentStateId === 4) {
-        stateVal.innerText = "PACKET LOSS";
-        stateVal.style.color = "var(--crimson-alert)";
-        occDesc.innerText = "Watchdog Tripped";
-        statusPill.className = "status-badge status-alert";
-        statusText.innerText = "RF SIGNAL INTERRUPTED";
+    function syncActiveCaseDisplay(activeKey) {
+      if (!activeKey) return;
+      if (currentActiveCase === 'auto') {
+        document.querySelectorAll('.btn-scenario-pill').forEach(b => {
+          if (b.id === 'case-auto') {
+            b.classList.add('active');
+          } else if (b.id === `case-${activeKey}`) {
+            b.classList.add('active-auto-executing');
+          } else {
+            b.classList.remove('active-auto-executing');
+          }
+        });
+        document.getElementById('scenario-dsp-text').innerText = dspDescriptions[activeKey] || dspDescriptions['auto'];
+        document.getElementById('dsp-mode-chip').innerText = `MODE: AUTO [${activeKey.toUpperCase()}]`;
       }
+    }
 
-      history.push({ raw: currentRaw, ema: currentEMA, base: currentBase, state: currentStateId });
-      if (history.length > 90) history.shift();
+    // Pre-seed telemetryHistory with baseline points so chart is populated immediately
+    for (let i = 0; i < 40; i++) {
+      telemetryHistory.push({
+        raw: 1.25 + (Math.random() * 0.2 - 0.1),
+        ema: 1.20,
+        base: 1.20,
+        state: 0,
+        time: Date.now() - (40 - i) * 80
+      });
+    }
 
-      if (data.event && data.event !== lastLoggedEvent) {
-        lastLoggedEvent = data.event;
-        let color = "#10b981";
-        let tag = "NORMAL";
-        if (data.event.includes("Crowd") || data.event.includes("Multi")) { color = "#ef4444"; tag = "ALERT"; }
-        else if (data.event.includes("Seated") || data.event.includes("Breathing")) { color = "#8b5cf6"; tag = "STATIC"; }
-        else if (data.event.includes("Walking") || data.event.includes("Motion")) { color = "#f59e0b"; tag = "MOTION"; }
-        else if (data.event.includes("Microwave") || data.event.includes("EMI")) { color = "#38bdf8"; tag = "FILTER"; }
-        else if (data.event.includes("Drop") || data.event.includes("Loss")) { color = "#ef4444"; tag = "CRITICAL"; }
+    // Connect to Backend SSE Stream
+    const evtSource = new EventSource('/stream');
 
-        logToTerminal(tag, data.event, color);
+    evtSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        currentRSSI = data.rssi;
+        currentRaw = data.raw_var;
+        currentEMA = data.ema_var;
+        currentBase = data.baseline;
+        currentStateId = data.state_id;
+        currentStateName = data.state_name;
+        currentOccupants = data.occupant_count;
+        currentTargets = data.targets || [];
+
+        // Synchronize scenario pill & DSP description with backend state
+        if (data.active_key) {
+          syncActiveCaseDisplay(data.active_key);
+        }
+
+        // Update Subcarrier Simulation Matrix based on perturbation
+        updateSubcarrierMatrix(currentEMA, currentStateId);
+
+        // Update Top Telemetry
+        const linkRate = document.getElementById('link-rate-text');
+        const rssiText = document.getElementById('rssi-text');
+        const linkChip = document.getElementById('link-chip');
+
+        if (currentStateId === 4) {
+          linkRate.innerText = "0 Hz";
+          rssiText.innerText = "(OFFLINE / -99 dBm)";
+          linkChip.style.borderColor = "var(--crimson-threat)";
+          linkChip.style.color = "var(--crimson-threat)";
+        } else {
+          linkRate.innerText = "80 Hz";
+          rssiText.innerText = `(${currentRSSI} dBm)`;
+          linkChip.style.borderColor = "";
+          linkChip.style.color = "";
+        }
+
+        // Master Threat Banner & Actuator States
+        updateMasterHUD(currentStateId, currentEMA, currentOccupants, data.active_key);
+
+        // Update KPI Cards
+        document.getElementById('metric-ema').innerText = currentEMA.toFixed(2);
+        document.getElementById('metric-raw').innerText = currentRaw.toFixed(2);
+        document.getElementById('metric-base').innerText = currentBase.toFixed(2);
+        document.getElementById('metric-count').innerText = currentOccupants;
+        document.getElementById('gauge-readout').innerText = `${currentEMA.toFixed(2)} / 85.0`;
+
+        // Telemetry History Queue
+        telemetryHistory.push({
+          raw: currentRaw,
+          ema: currentEMA,
+          base: currentBase,
+          state: currentStateId,
+          time: Date.now()
+        });
+        if (telemetryHistory.length > MAX_HISTORY) {
+          telemetryHistory.shift();
+        }
+
+        // Immediately render updated state on canvas
+        renderAllCanvases();
+
+        // Log State Shift if detected even if event string is null
+        if (currentStateId !== lastRecordedStateId) {
+          lastRecordedStateId = currentStateId;
+          const shiftMsg = `State Shift: ${currentStateName} [S(t)=${currentEMA.toFixed(1)}, Base=${currentBase.toFixed(1)}]`;
+          handleEventDispatch(shiftMsg, currentStateId);
+        }
+
+        // Log explicit event string from backend
+        if (data.event && data.event !== lastLoggedEvent) {
+          lastLoggedEvent = data.event;
+          handleEventDispatch(data.event, currentStateId);
+        }
+      } catch (err) {
+        console.error("SSE parse error", err);
       }
     };
 
-    // Modern Perspective Room Overlay
-    function drawCameraOverlay() {
-      const w = mainCanvas.width, h = mainCanvas.height;
+    evtSource.onerror = () => {
+      document.getElementById('master-status-banner').className = 'status-banner state-loss';
+      document.getElementById('master-status-text').innerText = 'TELEMETRY DISCONNECTED // RECONNECTING...';
+    };
 
-      if (!useWebcam) {
-        mCtx.fillStyle = "#020408";
-        mCtx.fillRect(0, 0, w, h);
+    function updateMasterHUD(stateId, ema, occupants, activeKey) {
+      const banner = document.getElementById('master-status-banner');
+      const bannerText = document.getElementById('master-status-text');
+      const metricState = document.getElementById('metric-state');
+      const metricCount = document.getElementById('metric-count');
+      const metricOccDesc = document.getElementById('metric-occupant-desc');
+      const metricLatch = document.getElementById('metric-latch-desc');
+      const baseState = document.getElementById('metric-base-state');
 
-        // Perspective 3D Room Grid
-        mCtx.strokeStyle = "rgba(148, 163, 184, 0.08)";
-        mCtx.lineWidth = 1;
+      const actRelay = document.getElementById('act-relay');
+      const actRelayState = document.getElementById('act-relay-state');
+      const actBuzzer = document.getElementById('act-buzzer');
+      const actBuzzerState = document.getElementById('act-buzzer-state');
+      const actLed = document.getElementById('act-led');
+      const actLedState = document.getElementById('act-led-state');
+      const actLink = document.getElementById('act-link');
+      const actLinkState = document.getElementById('act-link-state');
 
-        for (let x = 0; x <= w; x += 60) {
-          mCtx.beginPath();
-          mCtx.moveTo(x, h);
-          mCtx.lineTo(w / 2 + (x - w / 2) * 0.35, h * 0.52);
-          mCtx.stroke();
-        }
-        for (let y = h * 0.52; y <= h; y += 28) {
-          mCtx.beginPath();
-          mCtx.moveTo(0, y);
-          mCtx.lineTo(w, y);
-          mCtx.stroke();
-        }
-
-        // Back Wall Architecture
-        mCtx.strokeStyle = "rgba(148, 163, 184, 0.18)";
-        mCtx.strokeRect(w * 0.22, h * 0.18, w * 0.56, h * 0.36);
-        mCtx.strokeRect(w * 0.42, h * 0.24, w * 0.16, h * 0.30); // Door frame
+      if (activeKey === 'microwave_spike' && currentRaw > 50.0) {
+        baseState.innerText = "Hampel Clamped (95.0->1.7)";
       } else {
-        mCtx.clearRect(0, 0, w, h);
+        baseState.innerText = "Noise Floor: Calibrated";
       }
 
-      // Antenna Nodes (Tx Left, Rx Right)
-      drawAntennaNode(35, 60, "TX ILLUMINATOR", "#38bdf8");
-      drawAntennaNode(w - 35, 60, "RX SENSING NODE", "#10b981");
+      if (stateId === 0) {
+        // Quiet
+        banner.className = 'status-banner state-clear';
+        bannerText.innerText = 'ZONE SECURE // AMBIENT QUIET';
+        metricState.innerText = 'QUIET';
+        metricState.style.color = 'var(--emerald-safe)';
+        metricCount.style.color = 'var(--emerald-safe)';
+        metricOccDesc.innerText = 'Zone Empty';
+        metricLatch.innerText = 'Holdoff: Inactive';
 
-      // Dynamic RF Fresnel Multipath Cone
-      const pulse = (Math.sin(Date.now() / 250) + 1) * 0.5;
-      const rfAlpha = currentStateId === 4 ? 0.05 : (0.12 + pulse * 0.15);
-      const rfColor = currentStateId === 2 ? `rgba(239, 68, 68, ${rfAlpha})` : `rgba(56, 189, 248, ${rfAlpha})`;
+        setActuator(actRelay, actRelayState, 'OPEN', 'idle');
+        setActuator(actBuzzer, actBuzzerState, 'SILENT', 'idle');
+        setActuator(actLed, actLedState, 'OFF', 'idle');
+        setActuator(actLink, actLinkState, 'LOCKED', 'idle');
+      } else if (stateId === 1) {
+        // 1-Human Motion
+        banner.className = 'status-banner state-motion';
+        bannerText.innerText = 'MOTION DETECTED // 1 HUMAN WALKING';
+        metricState.innerText = 'ACTIVE';
+        metricState.style.color = 'var(--amber-motion)';
+        metricCount.style.color = 'var(--amber-motion)';
+        metricOccDesc.innerText = '1 Target Moving';
+        metricLatch.innerText = 'Relay Latched (Dwell 1500ms)';
 
-      mCtx.strokeStyle = rfColor;
-      mCtx.lineWidth = 2;
-      mCtx.setLineDash([8, 6]);
+        setActuator(actRelay, actRelayState, 'LATCHED', 'on');
+        setActuator(actBuzzer, actBuzzerState, 'PULSING', 'on');
+        setActuator(actLed, actLedState, 'PULSE', 'on');
+        setActuator(actLink, actLinkState, 'LOCKED', 'idle');
 
-      mCtx.beginPath();
-      mCtx.moveTo(35, 65);
-      mCtx.bezierCurveTo(w * 0.3, h * 0.72, w * 0.7, h * 0.72, w - 35, 65);
-      mCtx.stroke();
+        if (Date.now() - lastBeepTime > 1200) {
+          playTone(880, 0.12, 'sawtooth');
+          lastBeepTime = Date.now();
+        }
+      } else if (stateId === 2) {
+        // Multi-Human Crowd
+        banner.className = 'status-banner state-crowd';
+        bannerText.innerText = `HIGH ALERT // MULTI-OCCUPANT CROWD (${occupants}+)`;
+        metricState.innerText = 'CROWD';
+        metricState.style.color = 'var(--crimson-threat)';
+        metricCount.style.color = 'var(--crimson-threat)';
+        metricOccDesc.innerText = `${occupants} Targets Detected`;
+        metricLatch.innerText = 'Relay & Buzzer Alarm';
 
-      mCtx.beginPath();
-      mCtx.moveTo(35, 65);
-      mCtx.bezierCurveTo(w * 0.38, h * 0.42, w * 0.62, h * 0.42, w - 35, 65);
-      mCtx.stroke();
-      mCtx.setLineDash([]);
+        setActuator(actRelay, actRelayState, 'LATCHED', 'alarm');
+        setActuator(actBuzzer, actBuzzerState, 'SIREN', 'alarm');
+        setActuator(actLed, actLedState, 'ALERT', 'alarm');
+        setActuator(actLink, actLinkState, 'LOCKED', 'idle');
 
-      // Tactical Target Bounding HUD
+        if (Date.now() - lastBeepTime > 600) {
+          playTone(1100, 0.15, 'square');
+          lastBeepTime = Date.now();
+        }
+      } else if (stateId === 3) {
+        // Static Seated / Breathing
+        banner.className = 'status-banner state-vital';
+        bannerText.innerText = 'VITAL DETECTED // SEATED OCCUPANT RESPIRATION';
+        metricState.innerText = 'BREATHING';
+        metricState.style.color = 'var(--violet-vital)';
+        metricCount.style.color = 'var(--violet-vital)';
+        metricOccDesc.innerText = '1 Occupant Still';
+        metricLatch.innerText = 'Hold Active (12s Holdoff)';
+
+        setActuator(actRelay, actRelayState, 'HOLD', 'idle');
+        setActuator(actBuzzer, actBuzzerState, 'MUTED', 'idle');
+        setActuator(actLed, actLedState, 'BREATHE', 'idle');
+        setActuator(actLink, actLinkState, 'LOCKED', 'idle');
+
+        if (Date.now() - lastBeepTime > 2500) {
+          playTone(440, 0.08, 'sine');
+          lastBeepTime = Date.now();
+        }
+      } else if (stateId === 4) {
+        // Link Degradation
+        banner.className = 'status-banner state-loss';
+        bannerText.innerText = 'CRITICAL // RF LINK LOSS (WATCHDOG TIMEOUT)';
+        metricState.innerText = 'LINK LOSS';
+        metricState.style.color = 'var(--crimson-threat)';
+        metricCount.style.color = 'var(--crimson-threat)';
+        metricOccDesc.innerText = 'Watchdog Tripped';
+        metricLatch.innerText = 'Emergency Fail-Safe';
+
+        setActuator(actRelay, actRelayState, 'OPEN', 'alarm');
+        setActuator(actBuzzer, actBuzzerState, 'WARN', 'alarm');
+        setActuator(actLed, actLedState, 'FLASH', 'alarm');
+        setActuator(actLink, actLinkState, 'UNLOCKED', 'alarm');
+      }
+    }
+
+    function setActuator(container, stateEl, text, mode) {
+      container.className = `actuator-tile state-${mode}`;
+      stateEl.innerText = text;
+    }
+
+    function handleEventDispatch(eventText, stateId) {
+      let cat = "threat";
+      let tag = "NORMAL";
+      let color = "#10b981";
+
+      if (eventText.includes("Crowd") || eventText.includes("Multi") || stateId === 2) {
+        cat = "threat"; tag = "CROWD"; color = "#ef4444";
+      } else if (eventText.includes("Seated") || eventText.includes("Breathing") || stateId === 3) {
+        cat = "threat"; tag = "VITAL"; color = "#a855f7";
+      } else if (eventText.includes("Walking") || eventText.includes("Motion") || stateId === 1) {
+        cat = "threat"; tag = "MOTION"; color = "#f59e0b";
+      } else if (eventText.includes("Microwave") || eventText.includes("Spike")) {
+        cat = "dsp"; tag = "HAMPEL"; color = "#00f0ff";
+      } else if (eventText.includes("Drop") || eventText.includes("Loss") || stateId === 4) {
+        cat = "dsp"; tag = "WATCHDOG"; color = "#ef4444";
+      } else if (eventText.includes("Trigger") || eventText.includes("Scenario")) {
+        cat = "dsp"; tag = "CONFIG"; color = "#00f0ff";
+      }
+
+      appendTerminalLog(cat, tag, eventText, color);
+    }
+
+    function updateSubcarrierMatrix(ema, stateId) {
+      for (let sc = 0; sc < NUM_SUBCARRIERS; sc++) {
+        const carrierVariance = (ema / 85.0);
+        const subcarrierRipple = Math.sin(sc * 0.45 + Date.now() / 400);
+        let val = 0.05 + carrierVariance * (0.6 + 0.4 * subcarrierRipple) + (Math.random() * 0.08);
+
+        if (stateId === 4) val = 0.0;
+        if (stateId === 3) val = 0.15 + 0.1 * Math.sin(Date.now() / 300);
+
+        subcarrierBuffer[sc].push(Math.min(val, 1.0));
+        if (subcarrierBuffer[sc].length > MATRIX_STEPS) {
+          subcarrierBuffer[sc].shift();
+        }
+      }
+    }
+
+    // Digital Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-display').innerText = now.toTimeString().split(' ')[0];
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    /* =========================================================================
+       CANVAS RENDERER 1: 3D Tactical Room & Fresnel Wavefront Engine
+       Physically accurate through-wall perspective geometry
+       ========================================================================= */
+    function render3DRoom(ctx, w, h) {
+      if (!isWebcamAR) {
+        ctx.fillStyle = "#03060c";
+        ctx.fillRect(0, 0, w, h);
+
+        if (showGrid) {
+          // Perspective 3D Room Grid
+          ctx.strokeStyle = "rgba(0, 240, 255, 0.06)";
+          ctx.lineWidth = 1;
+
+          const horizonY = h * 0.48;
+          const vanishX = w * 0.50;
+
+          // Floor radials from vanishing point
+          for (let x = -w * 0.3; x <= w * 1.3; x += 55) {
+            ctx.beginPath();
+            ctx.moveTo(vanishX, horizonY);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+          }
+
+          // Floor horizontal depth rings
+          for (let y = horizonY; y <= h; y += 22) {
+            const dy = (y - horizonY) / (h - horizonY);
+            const py = horizonY + Math.pow(dy, 1.35) * (h - horizonY);
+            ctx.beginPath();
+            ctx.moveTo(0, py);
+            ctx.lineTo(w, py);
+            ctx.stroke();
+          }
+
+          // Back Wall & Ceiling Architectural Wireframe
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+          ctx.strokeRect(w * 0.18, h * 0.12, w * 0.64, horizonY - h * 0.12);
+          ctx.strokeRect(w * 0.44, h * 0.20, w * 0.12, horizonY - h * 0.20);
+        }
+      } else {
+        ctx.clearRect(0, 0, w, h);
+      }
+
+      // Through-Wall Partition Overlay (divides Monitored Room from Surveillance Station)
+      const wallY = h * 0.40;
+      drawThroughWallPartition(ctx, w, h, wallY);
+
+      // Antenna Nodes:
+      // Tx Illuminator (ESP32 Beacon) is inside the Monitored Room (top-left)
+      const txX = w * 0.22, txY = h * 0.22;
+      // Rx Node (Edge PCB Sensor) is on Surveillance Station side (bottom-right)
+      const rxX = w * 0.78, rxY = h * 0.82;
+
+      drawTacticalAntenna(ctx, txX, txY, "TX ILLUMINATOR (ESP32)", "#00f0ff", true);
+      drawTacticalAntenna(ctx, rxX, rxY, "RX SENSOR NODE (EDGE DSP)", "#10b981", false);
+
+      // Dynamic Fresnel Ellipsoids & Through-Wall RF Multipath Waves
+      if (showFresnel) {
+        drawFresnelWavefronts(ctx, txX, txY, rxX, rxY, w, h, wallY);
+      }
+
+      // Dynamic Target Tracking (Translucent reticles based on backend targets)
+      drawDynamicTargets(ctx, w, h, wallY);
+
+      // Tactical Crosshairs & Corner HUD Marks
+      drawTacticalCornerReticles(ctx, w, h);
+    }
+
+    function drawThroughWallPartition(ctx, w, h, wallY) {
+      // Gypsum Partition Barrier with Physical Attenuation Hatching
+      ctx.fillStyle = "rgba(14, 28, 52, 0.45)";
+      ctx.fillRect(w * 0.08, wallY - 6, w * 0.84, 12);
+
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(w * 0.08, wallY - 6, w * 0.84, 12);
+
+      // Diagonal cross-hatch pattern inside wall
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.15)";
+      ctx.lineWidth = 1;
+      for (let x = w * 0.08; x < w * 0.92; x += 16) {
+        ctx.beginPath();
+        ctx.moveTo(x, wallY - 6);
+        ctx.lineTo(x + 10, wallY + 6);
+        ctx.stroke();
+      }
+
+      // Partition Callout Badge
+      ctx.fillStyle = "rgba(4, 7, 13, 0.85)";
+      ctx.fillRect(w * 0.10, wallY - 20, 310, 15);
+      ctx.fillStyle = "rgba(0, 240, 255, 0.9)";
+      ctx.font = "700 9px var(--font-mono)";
+      ctx.fillText("PARTITION WALL (12mm GYPSUM) // RF ATTENUATION: -2.8dB", w * 0.12, wallY - 9);
+    }
+
+    function drawTacticalAntenna(ctx, x, y, label, color, isTx) {
+      // Glowing Base
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer Pulse Rings
+      const pulse = (Date.now() / (isTx ? 320 : 420)) % 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, 7 + pulse * 14, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Antenna Mast
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + (isTx ? 22 : -22));
+      ctx.stroke();
+
+      // Label HUD Badge
+      ctx.font = "700 9px var(--font-mono)";
+      const labelW = ctx.measureText(label).width;
+      const lx = isTx ? x + 14 : x - labelW - 14;
+      const ly = y + 4;
+
+      ctx.fillStyle = "rgba(4, 7, 13, 0.85)";
+      ctx.fillRect(lx - 4, ly - 10, labelW + 8, 14);
+      ctx.strokeStyle = hexToRgba(color, 0.5);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(lx - 4, ly - 10, labelW + 8, 14);
+
+      ctx.fillStyle = color;
+      ctx.fillText(label, lx, ly);
+    }
+
+    function drawFresnelWavefronts(ctx, txX, txY, rxX, rxY, w, h, wallY) {
+      const now = Date.now();
+      const isLoss = currentStateId === 4;
+      const isCrowd = currentStateId === 2;
+      const isMotion = currentStateId === 1;
+
+      // 1. Direct LOS Beam that physically penetrates straight through the wall!
+      ctx.strokeStyle = isLoss ? "rgba(239, 68, 68, 0.25)" : "rgba(0, 240, 255, 0.55)";
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(txX, txY);
+      ctx.lineTo(rxX, rxY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Through-wall penetration intersection point
+      const t = (wallY - txY) / (rxY - txY);
+      const intersectX = txX + t * (rxX - txX);
+
+      // Diffraction burst at wall barrier
+      if (!isLoss) {
+        ctx.fillStyle = "rgba(0, 240, 255, 0.75)";
+        ctx.beginPath();
+        ctx.arc(intersectX, wallY, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(0, 240, 255, 0.35)";
+        ctx.beginPath();
+        ctx.arc(intersectX, wallY, 9, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (isLoss) return;
+
+      // 2. 1st and 2nd Fresnel Zones (Dynamic Multipath Ellipsoids)
+      const numWaves = 3;
+      for (let i = 0; i < numWaves; i++) {
+        const offset = ((now / 450) + (i * 0.33)) % 1;
+        const waveColor = isCrowd 
+          ? `rgba(239, 68, 68, ${0.45 - offset * 0.35})`
+          : (isMotion ? `rgba(245, 158, 11, ${0.42 - offset * 0.3})` : `rgba(0, 240, 255, ${0.35 - offset * 0.25})`);
+
+        ctx.strokeStyle = waveColor;
+        ctx.lineWidth = 1.5;
+
+        // Multipath Arc 1 (Floor reflection through wall)
+        ctx.beginPath();
+        ctx.moveTo(txX, txY);
+        ctx.bezierCurveTo(w * 0.38, h * 0.65 + offset * 18, w * 0.62, h * 0.68 + offset * 18, rxX, rxY);
+        ctx.stroke();
+
+        // Multipath Arc 2 (Upper room reflection)
+        ctx.beginPath();
+        ctx.moveTo(txX, txY);
+        ctx.bezierCurveTo(w * 0.42, h * 0.12 - offset * 12, w * 0.68, h * 0.42 - offset * 12, rxX, rxY);
+        ctx.stroke();
+      }
+    }
+
+    function drawDynamicTargets(ctx, w, h, wallY) {
       if (currentStateId === 0) {
-        mCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
-        mCtx.lineWidth = 1;
-        mCtx.setLineDash([4, 4]);
-        mCtx.strokeRect(w * 0.32, h * 0.42, w * 0.36, h * 0.44);
-        mCtx.setLineDash([]);
-        mCtx.fillStyle = "rgba(16, 185, 129, 0.85)";
-        mCtx.font = "600 11px var(--font-mono)";
-        mCtx.fillText("ZONE SCAN: NOMINAL (NO PERTURBATION)", w * 0.26, h * 0.38);
-      } else if (currentStateId === 1) {
-        drawTacticalTarget(w * 0.45, h * 0.36, 85, 150, "TARGET #1: ACTIVE MOTION", "#f59e0b");
-      } else if (currentStateId === 2) {
-        drawTacticalTarget(w * 0.28, h * 0.34, 80, 150, "TARGET #1 (SECTOR A)", "#ef4444");
-        drawTacticalTarget(w * 0.58, h * 0.38, 80, 145, "TARGET #2 (SECTOR B)", "#ef4444");
-      } else if (currentStateId === 3) {
-        drawTacticalTarget(w * 0.46, h * 0.46, 88, 110, "OCCUPANT #1 (SEATED BREATHING)", "#8b5cf6");
+        // Nominal Ambient Secure Zone HUD
+        ctx.strokeStyle = "rgba(16, 185, 129, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(w * 0.30, h * 0.22, w * 0.40, h * 0.35);
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "rgba(16, 185, 129, 0.85)";
+        ctx.font = "700 10.5px var(--font-mono)";
+        ctx.fillText("TARGET ZONE SCAN // NOMINAL (ZERO MULTIPATH ANOMALIES)", w * 0.25, h * 0.32);
       } else if (currentStateId === 4) {
-        mCtx.fillStyle = "rgba(239, 68, 68, 0.18)";
-        mCtx.fillRect(0, 0, w, h);
-        mCtx.strokeStyle = "rgba(239, 68, 68, 0.8)";
-        mCtx.lineWidth = 2;
-        mCtx.strokeRect(16, 16, w - 32, h - 32);
-        mCtx.fillStyle = "#ffffff";
-        mCtx.font = "700 13px var(--font-mono)";
-        mCtx.fillText("⚠ RF SIGNAL LOSS: PACKET STREAM TIMEOUT", w * 0.24, h * 0.52);
+        // Packet Drop / Watchdog Alarm Overlay
+        ctx.fillStyle = "rgba(239, 68, 68, 0.16)";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.8)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(20, 20, w - 40, h - 40);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "800 14px var(--font-mono)";
+        ctx.fillText("⚠ RF SIGNAL DROPOUT: 0 CSI PACKETS RECEIVED", w * 0.22, h * 0.48);
+        ctx.font = "600 11px var(--font-mono)";
+        ctx.fillStyle = "var(--crimson-threat)";
+        ctx.fillText("FAILSAFE WATCHDOG ACTIVATED // CHECK TX ILLUMINATOR POWER", w * 0.17, h * 0.55);
+      } else {
+        // Render targets based on backend data
+        if (currentTargets.length === 0) {
+          // Fallback if array is empty during motion state
+          if (currentStateId === 1) {
+            drawTacticalTargetReticle(ctx, w * 0.48, h * 0.28, 80, 120, "TARGET #1: ACTIVE MOTION", "#f59e0b", "RANGE: 2.15m | AZ: +14° | VEL: 0.85m/s");
+          } else if (currentStateId === 2) {
+            drawTacticalTargetReticle(ctx, w * 0.35, h * 0.26, 75, 115, "TARGET #1 (SECTOR A)", "#ef4444", "RANGE: 1.80m | AZ: -24° | CROWD");
+            drawTacticalTargetReticle(ctx, w * 0.60, h * 0.30, 75, 115, "TARGET #2 (SECTOR B)", "#ef4444", "RANGE: 3.10m | AZ: +38° | CROWD");
+          } else if (currentStateId === 3) {
+            drawTacticalTargetReticle(ctx, w * 0.48, h * 0.30, 80, 100, "OCCUPANT #1: SEATED BREATHING", "#a855f7", "RESPIRATION: 14 BPM | MICRO-DOPPLER");
+          }
+        } else {
+          currentTargets.forEach((tgt, idx) => {
+            const isStatic = currentStateId === 3;
+            const color = isStatic ? "#a855f7" : (currentStateId === 2 ? "#ef4444" : "#f59e0b");
+            // Map polar target (angle in rad, dist 0..1) into 3D room floor space
+            const normX = 0.5 + Math.sin(tgt.angle) * (tgt.dist * 0.35);
+            const normY = 0.24 + Math.cos(tgt.angle) * (tgt.dist * 0.18);
+            const tx = w * normX;
+            const ty = h * normY;
+            const bw = isStatic ? 80 : 75;
+            const bh = isStatic ? 100 : 120;
+            const tag = isStatic ? `${tgt.label}: STILL` : `${tgt.label}: ACTIVE`;
+            const distM = (1.5 + tgt.dist * 2.5).toFixed(2);
+            const azDeg = Math.round((tgt.angle * 180 / Math.PI) - 90);
+            const sub = isStatic ? "RESPIRATION: 14 BPM | MICRO-DOPPLER" : `RANGE: ${distM}m | AZ: ${azDeg > 0 ? '+' : ''}${azDeg}°`;
+
+            drawTacticalTargetReticle(ctx, tx - bw / 2, ty, bw, bh, tag, color, sub);
+          });
+        }
       }
-
-      // Watermark
-      mCtx.fillStyle = "rgba(148, 163, 184, 0.5)";
-      mCtx.font = "10px var(--font-mono)";
-      mCtx.fillText(`CH6 2437MHz | 802.11n HT20 | ${new Date().toTimeString().split(' ')[0]}`, 14, h - 14);
     }
 
-    function drawAntennaNode(x, y, label, color) {
-      mCtx.fillStyle = color;
-      mCtx.beginPath();
-      mCtx.arc(x, y, 6, 0, Math.PI * 2);
-      mCtx.fill();
-
-      mCtx.strokeStyle = color;
-      mCtx.lineWidth = 1.5;
-      mCtx.beginPath();
-      mCtx.arc(x, y, 12, 0, Math.PI * 2);
-      mCtx.stroke();
-
-      mCtx.fillStyle = color;
-      mCtx.font = "700 9px var(--font-mono)";
-      mCtx.fillText(label, x > 150 ? x - 110 : x + 16, y + 3);
-    }
-
-    function drawTacticalTarget(x, y, bw, bh, label, color) {
+    function drawTacticalTargetReticle(ctx, x, y, bw, bh, tag, color, subtelemetry) {
       const corner = 14;
-      mCtx.strokeStyle = color;
-      mCtx.lineWidth = 2.5;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.8;
 
-      // Precision brackets
-      mCtx.beginPath(); mCtx.moveTo(x, y + corner); mCtx.lineTo(x, y); mCtx.lineTo(x + corner, y); mCtx.stroke();
-      mCtx.beginPath(); mCtx.moveTo(x + bw - corner, y); mCtx.lineTo(x + bw, y); mCtx.lineTo(x + bw, y + corner); mCtx.stroke();
-      mCtx.beginPath(); mCtx.moveTo(x, y + bh - corner); mCtx.lineTo(x, y + bh); mCtx.lineTo(x + corner, y + bh); mCtx.stroke();
-      mCtx.beginPath(); mCtx.moveTo(x + bw - corner, y + bh); mCtx.lineTo(x + bw, y + bh); mCtx.lineTo(x + bw, y + bh - corner); mCtx.stroke();
+      // 4 Precision Tactical Corner Brackets
+      ctx.beginPath(); ctx.moveTo(x, y + corner); ctx.lineTo(x, y); ctx.lineTo(x + corner, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + bw - corner, y); ctx.lineTo(x + bw, y); ctx.lineTo(x + bw, y + corner); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y + bh - corner); ctx.lineTo(x, y + bh); ctx.lineTo(x + corner, y + bh); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + bw - corner, y + bh); ctx.lineTo(x + bw, y + bh); ctx.lineTo(x + bw, y + bh - corner); ctx.stroke();
 
-      // Soft glow center
-      mCtx.fillStyle = color.replace(')', ', 0.12)').replace('rgb', 'rgba');
-      mCtx.fillRect(x, y, bw, bh);
+      // Translucent target body fill (HEX converted to RGBA with 0.15 alpha)
+      ctx.fillStyle = hexToRgba(color, 0.14);
+      ctx.fillRect(x, y, bw, bh);
 
-      // Tactical pill header
-      mCtx.fillStyle = color;
-      mCtx.fillRect(x - 2, y - 22, mCtx.measureText(label).width + 16, 20);
-      mCtx.fillStyle = "#000000";
-      mCtx.font = "700 9px var(--font-mono)";
-      mCtx.fillText(label, x + 6, y - 8);
+      // Center crosshair
+      ctx.strokeStyle = hexToRgba(color, 0.5);
+      ctx.lineWidth = 1;
+      const midX = x + bw / 2, midY = y + bh / 2;
+      ctx.beginPath();
+      ctx.moveTo(midX - 8, midY); ctx.lineTo(midX + 8, midY);
+      ctx.moveTo(midX, midY - 8); ctx.lineTo(midX, midY + 8);
+      ctx.stroke();
+
+      // Floor Shadow / Spatial Pedestal
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(x + bw / 2, y + bh, bw * 0.45, 7, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Target Header Tag (Set font first, then measure!)
+      ctx.font = "800 9px var(--font-mono)";
+      const tagW = ctx.measureText(tag).width + 14;
+      ctx.fillStyle = color;
+      ctx.fillRect(x - 2, y - 22, tagW, 18);
+
+      ctx.fillStyle = "#000000";
+      ctx.fillText(tag, x + 5, y - 9);
+
+      // Subtelemetry HUD Footer
+      if (subtelemetry) {
+        ctx.font = "600 8.5px var(--font-mono)";
+        const subW = ctx.measureText(subtelemetry).width + 12;
+        ctx.fillStyle = "rgba(4, 7, 13, 0.88)";
+        ctx.fillRect(x - 2, y + bh + 4, subW, 16);
+        ctx.strokeStyle = hexToRgba(color, 0.4);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - 2, y + bh + 4, subW, 16);
+
+        ctx.fillStyle = color;
+        ctx.fillText(subtelemetry, x + 4, y + bh + 16);
+      }
     }
 
-    // Polar Radar Fallback View
-    function drawRadar() {
-      const w = mainCanvas.width, h = mainCanvas.height;
-      const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 25;
+    function drawTacticalCornerReticles(ctx, w, h) {
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+      ctx.lineWidth = 1.5;
+      const size = 12;
 
-      mCtx.fillStyle = "rgba(2, 4, 8, 0.25)";
-      mCtx.fillRect(0, 0, w, h);
+      // Top Left
+      ctx.beginPath(); ctx.moveTo(10, 10 + size); ctx.lineTo(10, 10); ctx.lineTo(10 + size, 10); ctx.stroke();
+      // Top Right
+      ctx.beginPath(); ctx.moveTo(w - 10 - size, 10); ctx.lineTo(w - 10, 10); ctx.lineTo(w - 10, 10 + size); ctx.stroke();
+      // Bottom Left
+      ctx.beginPath(); ctx.moveTo(10, h - 10 - size); ctx.lineTo(10, h - 10); ctx.lineTo(10 + size, h - 10); ctx.stroke();
+      // Bottom Right
+      ctx.beginPath(); ctx.moveTo(w - 10 - size, h - 10); ctx.lineTo(w - 10, h - 10); ctx.lineTo(w - 10, h - 10 - size); ctx.stroke();
 
-      // Distance rings
-      mCtx.strokeStyle = "rgba(16, 185, 129, 0.22)";
-      mCtx.lineWidth = 1;
-      for (let i = 1; i <= 3; i++) {
-        mCtx.beginPath();
-        mCtx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
-        mCtx.stroke();
+      // Timestamp & Channel Stamp
+      ctx.fillStyle = "rgba(148, 163, 184, 0.55)";
+      ctx.font = "9px var(--font-mono)";
+      ctx.fillText(`CH6 2437MHz | 802.11n HT20 | Fs:80Hz | ${new Date().toISOString().substring(11, 19)}`, 14, h - 14);
+    }
+
+    /* =========================================================================
+       CANVAS RENDERER 2: Polar Radar Scope Engine
+       Tactical 360 radar sweep with crisp azimuth markings
+       ========================================================================= */
+    function renderPolarRadar(ctx, w, h) {
+      if (!isWebcamAR) {
+        ctx.fillStyle = "#020409";
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        ctx.clearRect(0, 0, w, h);
       }
 
-      // Crosshairs
-      mCtx.beginPath();
-      mCtx.moveTo(cx - r, cy); mCtx.lineTo(cx + r, cy);
-      mCtx.moveTo(cx, cy - r); mCtx.lineTo(cx, cy + r);
-      mCtx.stroke();
+      const cx = w / 2, cy = h / 2;
+      const maxR = Math.min(cx, cy) - 28;
 
-      // Sweep
-      radarAngle += 0.04;
-      const sx = cx + r * Math.cos(radarAngle);
-      const sy = cy + r * Math.sin(radarAngle);
+      // Concentric Range Rings (1m, 2m, 3m, 4m)
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.20)";
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 4; i++) {
+        const ringR = (maxR / 4) * i;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+        ctx.stroke();
 
-      mCtx.strokeStyle = currentStateId === 4 ? "#ef4444" : "#10b981";
-      mCtx.lineWidth = 2;
-      mCtx.beginPath();
-      mCtx.moveTo(cx, cy);
-      mCtx.lineTo(sx, sy);
-      mCtx.stroke();
+        ctx.fillStyle = "rgba(0, 240, 255, 0.5)";
+        ctx.font = "9px var(--font-mono)";
+        ctx.fillText(`${i}.0m`, cx + 6, cy - ringR + 12);
+      }
 
-      // Targets
+      // Azimuth Ray Lines with Degree Annotations (Every 30 degrees)
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.12)";
+      ctx.font = "8px var(--font-mono)";
+      for (let deg = 0; deg < 360; deg += 30) {
+        const rad = (deg * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + maxR * Math.cos(rad), cy + maxR * Math.sin(rad));
+        ctx.stroke();
+
+        // Degree label at perimeter
+        const labelX = cx + (maxR + 14) * Math.cos(rad) - 6;
+        const labelY = cy + (maxR + 14) * Math.sin(rad) + 3;
+        ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
+        ctx.fillText(`${deg}°`, labelX, labelY);
+      }
+
+      // Rotating Radar Sweep Line with Phosphor Tail
+      radarSweepAngle += 0.035;
+      const sweepX = cx + maxR * Math.cos(radarSweepAngle);
+      const sweepY = cy + maxR * Math.sin(radarSweepAngle);
+
+      const sweepGrad = ctx.createLinearGradient(cx, cy, sweepX, sweepY);
+      sweepGrad.addColorStop(0, "rgba(0, 240, 255, 0.9)");
+      sweepGrad.addColorStop(1, "rgba(0, 240, 255, 0.08)");
+
+      ctx.strokeStyle = sweepGrad;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(sweepX, sweepY);
+      ctx.stroke();
+
+      // Render Detected Targets on Radar Grid with Consistent Semantic Colors
       currentTargets.forEach((tgt, idx) => {
-        const tx = cx + (r * tgt.dist) * Math.cos(tgt.angle);
-        const ty = cy + (r * tgt.dist) * Math.sin(tgt.angle);
+        const tr = maxR * tgt.dist;
+        const tx = cx + tr * Math.cos(tgt.angle);
+        const ty = cy + tr * Math.sin(tgt.angle);
         const isStatic = currentStateId === 3;
-        const color = isStatic ? "#8b5cf6" : (idx === 0 ? "#ef4444" : "#f59e0b");
+        // Color alignment: Amber for 1-Human Motion, Crimson for Crowd, Violet for Vital
+        const color = isStatic ? "#a855f7" : (currentStateId === 2 ? "#ef4444" : "#f59e0b");
 
-        mCtx.fillStyle = color;
-        mCtx.beginPath();
-        mCtx.arc(tx, ty, isStatic ? 6 : 8, 0, Math.PI * 2);
-        mCtx.fill();
+        // Center Blip
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(tx, ty, isStatic ? 5 : 7, 0, Math.PI * 2);
+        ctx.fill();
 
-        mCtx.strokeStyle = color;
-        mCtx.lineWidth = 1.5;
-        mCtx.beginPath();
-        mCtx.arc(tx, ty, 16 + (Date.now() / 40 + idx * 8) % 16, 0, Math.PI * 2);
-        mCtx.stroke();
+        // Expanding Doppler Pulse
+        const pSize = 12 + (Date.now() / 45 + idx * 8) % 18;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(tx, ty, pSize, 0, Math.PI * 2);
+        ctx.stroke();
 
-        mCtx.fillStyle = "#ffffff";
-        mCtx.font = "600 10px var(--font-mono)";
-        mCtx.fillText(tgt.label, tx - 24, ty - 12);
+        // Target Tag
+        ctx.font = "700 9px var(--font-mono)";
+        const labelW = ctx.measureText(tgt.label).width;
+        ctx.fillStyle = "rgba(4, 7, 13, 0.85)";
+        ctx.fillRect(tx + 8, ty - 16, labelW + 8, 14);
+        ctx.strokeStyle = hexToRgba(color, 0.4);
+        ctx.strokeRect(tx + 8, ty - 16, labelW + 8, 14);
+
+        ctx.fillStyle = color;
+        ctx.fillText(tgt.label, tx + 12, ty - 6);
       });
     }
 
-    // High-Resolution Smooth Chart
-    function drawChart() {
-      const w = chartCanvas.width, h = chartCanvas.height;
-      cCtx.fillStyle = "#020408";
-      cCtx.fillRect(0, 0, w, h);
+    /* =========================================================================
+       CANVAS RENDERER 3: 52-OFDM Subcarrier Spectrogram Matrix
+       Real-time subcarrier waterfall with pilot carrier markers
+       ========================================================================= */
+    function renderSubcarrierMatrix(ctx, w, h) {
+      ctx.fillStyle = "#020409";
+      ctx.fillRect(0, 0, w, h);
 
-      // Grid Lines
-      cCtx.strokeStyle = "rgba(148, 163, 184, 0.06)";
-      cCtx.lineWidth = 1;
-      for (let y = 30; y < h - 20; y += 45) {
-        cCtx.beginPath();
-        cCtx.moveTo(0, y);
-        cCtx.lineTo(w, y);
-        cCtx.stroke();
+      const cellW = (w - 75) / MATRIX_STEPS;
+      const cellH = (h - 40) / NUM_SUBCARRIERS;
+      const startX = 62, startY = 20;
+
+      // Subcarrier Axis Label
+      ctx.fillStyle = "rgba(148, 163, 184, 0.7)";
+      ctx.font = "8px var(--font-mono)";
+      for (let sc = 0; sc < NUM_SUBCARRIERS; sc += 6) {
+        ctx.fillText(`SC #${sc}`, 12, startY + (sc * cellH) + cellH);
       }
 
-      const maxVal = 90.0;
-      const ySingle = h - ((currentBase + 16.0) / maxVal) * (h - 40) - 20;
-      const yMulti  = h - ((currentBase + 35.0) / maxVal) * (h - 40) - 20;
+      // Draw Perturbation Heatmap Grid
+      for (let sc = 0; sc < NUM_SUBCARRIERS; sc++) {
+        const row = subcarrierBuffer[sc];
+        const isPilot = (sc === 7 || sc === 21 || sc === 31 || sc === 45); // 802.11n pilot indices
 
-      // Threshold lines
-      cCtx.setLineDash([4, 4]);
-      cCtx.strokeStyle = "rgba(245, 158, 11, 0.5)";
-      cCtx.beginPath(); cCtx.moveTo(0, ySingle); cCtx.lineTo(w, ySingle); cCtx.stroke();
+        for (let t = 0; t < row.length; t++) {
+          const val = row[t];
+          const x = startX + t * cellW;
+          const y = startY + sc * cellH;
 
-      cCtx.strokeStyle = "rgba(239, 68, 68, 0.6)";
-      cCtx.beginPath(); cCtx.moveTo(0, yMulti); cCtx.lineTo(w, yMulti); cCtx.stroke();
-      cCtx.setLineDash([]);
+          // Thermal spectrum palette: Deep Navy -> Cyan -> Amber -> Crimson
+          let r, g, b;
+          if (val < 0.25) {
+            r = 8; g = Math.floor(val * 4 * 160); b = 255;
+          } else if (val < 0.65) {
+            r = Math.floor((val - 0.25) * 2.5 * 240); g = 210; b = 30;
+          } else {
+            r = 245; g = Math.floor((1.0 - val) * 2.8 * 80); b = 40;
+          }
 
-      if (history.length < 2) return;
-      const step = w / 90;
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.fillRect(x, y, cellW - 0.5, cellH - 0.5);
 
-      // 1. Draw Baseline Line (Dashed Green)
-      cCtx.setLineDash([2, 4]);
-      cCtx.strokeStyle = "rgba(16, 185, 129, 0.55)";
-      cCtx.beginPath();
-      history.forEach((pt, i) => {
-        const x = i * step;
-        const y = h - (pt.base / maxVal) * (h - 40) - 20;
-        if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
-      });
-      cCtx.stroke();
-      cCtx.setLineDash([]);
+          if (isPilot && t === row.length - 1) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+            ctx.fillRect(x + cellW - 3, y, 2, cellH);
+          }
+        }
+      }
 
-      // 2. Draw Raw Variance (Muted)
-      cCtx.strokeStyle = "rgba(148, 163, 184, 0.35)";
-      cCtx.lineWidth = 1;
-      cCtx.beginPath();
-      history.forEach((pt, i) => {
-        const x = i * step;
-        const y = h - (Math.min(pt.raw, maxVal) / maxVal) * (h - 40) - 20;
-        if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
-      });
-      cCtx.stroke();
-
-      // 3. Draw EMA Curve with Gradient Glow
-      const emaColor = currentStateId === 3 ? "#8b5cf6" : (currentStateId === 2 ? "#ef4444" : (currentStateId === 1 ? "#f59e0b" : "#38bdf8"));
-      cCtx.strokeStyle = emaColor;
-      cCtx.lineWidth = 2.5;
-      cCtx.beginPath();
-      history.forEach((pt, i) => {
-        const x = i * step;
-        const y = h - (Math.min(pt.ema, maxVal) / maxVal) * (h - 40) - 20;
-        if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
-      });
-      cCtx.stroke();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.font = "9px var(--font-mono)";
+      ctx.fillText("OFDM CARRIER SPACE WATERFALL (HT20 52 SUBCARRIERS) // TIME SLICE (45 FRAMES)", startX, h - 8);
     }
 
-    // Modern Gauge Bar
-    function drawGauge() {
-      const w = gaugeCanvas.width, h = gaugeCanvas.height;
-      gCtx.fillStyle = "#020408";
-      gCtx.fillRect(0, 0, w, h);
+    /* =========================================================================
+       CANVAS RENDERER 4: Real-Time Variance & Hysteresis Chart
+       Smooth rolling chart with complete Y-axis scales and threshold badges
+       ========================================================================= */
+    function renderChart(ctx, w, h) {
+      ctx.fillStyle = "#020409";
+      ctx.fillRect(0, 0, w, h);
 
-      const barX = 20, barY = 32, barW = w - 40, barH = 16;
-      const pct = Math.min(currentEMA / 85.0, 1.0);
+      const maxVal = 95.0;
+      const leftPad = 32;
+      const chartW = w - leftPad - 10;
+      const chartH = h - 35;
+      const bottomY = h - 15;
+
+      // Y-Axis Grid Guidelines & Numeric Ticks (0, 20, 40, 60, 80)
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+      ctx.lineWidth = 1;
+      ctx.font = "8px var(--font-mono)";
+      ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
+
+      for (let v = 0; v <= 80; v += 20) {
+        const y = bottomY - (v / maxVal) * chartH;
+        ctx.beginPath();
+        ctx.moveTo(leftPad, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+        ctx.fillText(`${v}`, 8, y + 3);
+      }
+
+      // Threshold lines with inline canvas badges
+      const yLow = bottomY - ((currentBase + 8.0) / maxVal) * chartH;
+      const yHigh = bottomY - ((currentBase + 18.5) / maxVal) * chartH;
+      const yMulti = bottomY - ((currentBase + 35.0) / maxVal) * chartH;
+
+      // T_LOW
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = "rgba(16, 185, 129, 0.45)";
+      ctx.beginPath(); ctx.moveTo(leftPad, yLow); ctx.lineTo(w, yLow); ctx.stroke();
+      ctx.fillStyle = "rgba(16, 185, 129, 0.75)";
+      ctx.fillText("T_LOW (8.0)", leftPad + 6, yLow - 3);
+
+      // T_HIGH
+      ctx.strokeStyle = "rgba(245, 158, 11, 0.6)";
+      ctx.beginPath(); ctx.moveTo(leftPad, yHigh); ctx.lineTo(w, yHigh); ctx.stroke();
+      ctx.fillStyle = "rgba(245, 158, 11, 0.85)";
+      ctx.fillText("T_HIGH (18.5)", leftPad + 6, yHigh - 3);
+
+      // T_MULTI
+      ctx.strokeStyle = "rgba(239, 68, 68, 0.7)";
+      ctx.beginPath(); ctx.moveTo(leftPad, yMulti); ctx.lineTo(w, yMulti); ctx.stroke();
+      ctx.fillStyle = "rgba(239, 68, 68, 0.85)";
+      ctx.fillText("T_MULTI (35.0)", leftPad + 6, yMulti - 3);
+      ctx.setLineDash([]);
+
+      if (telemetryHistory.length < 2) return;
+      const step = chartW / (MAX_HISTORY - 1);
+      const startX = leftPad + (MAX_HISTORY - telemetryHistory.length) * step;
+
+      // 1. Draw Baseline Floor (Dashed Emerald)
+      ctx.setLineDash([2, 4]);
+      ctx.strokeStyle = "rgba(16, 185, 129, 0.65)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      telemetryHistory.forEach((pt, i) => {
+        const x = startX + i * step;
+        const y = bottomY - (pt.base / maxVal) * chartH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 2. Draw Raw Variance (Muted thin line)
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      telemetryHistory.forEach((pt, i) => {
+        const x = startX + i * step;
+        const y = bottomY - (Math.min(pt.raw, maxVal) / maxVal) * chartH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // 3. Draw EMA S(t) with glowing line
+      const color = currentStateId === 3 
+        ? "#a855f7" 
+        : (currentStateId === 2 ? "#ef4444" : (currentStateId === 1 ? "#f59e0b" : "#00f0ff"));
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      telemetryHistory.forEach((pt, i) => {
+        const x = startX + i * step;
+        const y = bottomY - (Math.min(pt.ema, maxVal) / maxVal) * chartH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Interactive Cursor Line
+      if (chartMouseX >= leftPad && chartMouseX <= w) {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(chartMouseX, 0);
+        ctx.lineTo(chartMouseX, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    /* =========================================================================
+       CANVAS RENDERER 5: Movement Intensity Multi-Zone Meter
+       ========================================================================= */
+    function renderGauge(ctx, w, h) {
+      ctx.fillStyle = "#090e1a";
+      ctx.fillRect(0, 0, w, h);
+
+      const barX = 8, barY = 12, barW = w - 16, barH = 18;
+      const pct = Math.min(Math.max(currentEMA / 85.0, 0.02), 1.0);
 
       // Track background
-      gCtx.fillStyle = "rgba(255, 255, 255, 0.05)";
-      gCtx.roundRect(barX, barY, barW, barH, 4);
-      gCtx.fill();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+      ctx.fillRect(barX, barY, barW, barH);
 
-      // Fill gradient
-      const grad = gCtx.createLinearGradient(barX, 0, barX + barW, 0);
-      grad.addColorStop(0, "#10b981");
-      grad.addColorStop(0.35, "#f59e0b");
-      grad.addColorStop(0.7, "#ef4444");
+      // Gradient Fill
+      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      grad.addColorStop(0, "#00f0ff");
+      grad.addColorStop(0.20, "#10b981");
+      grad.addColorStop(0.50, "#f59e0b");
+      grad.addColorStop(1.0, "#ef4444");
 
-      gCtx.fillStyle = grad;
-      gCtx.roundRect(barX, barY, Math.max(barW * pct, 4), barH, 4);
-      gCtx.fill();
+      ctx.fillStyle = grad;
+      ctx.fillRect(barX, barY, barW * pct, barH);
 
-      // Scale markings
-      gCtx.fillStyle = "rgba(148, 163, 184, 0.6)";
-      gCtx.font = "10px var(--font-mono)";
-      gCtx.fillText("0.0 (Floor)", barX, barY + 34);
-      gCtx.fillText("T1: Motion (16.0)", barX + barW * (16.0 / 85.0) - 30, barY + 34);
-      gCtx.fillText("T2: Crowd (35.0)", barX + barW * (35.0 / 85.0) - 30, barY + 34);
-      gCtx.fillText("85.0+", barX + barW - 32, barY + 34);
+      // Threshold ticks
+      ctx.fillStyle = "#ffffff";
+      const tLowX = barX + barW * (8.0 / 85.0);
+      const tHighX = barX + barW * (18.5 / 85.0);
+      const tMultiX = barX + barW * (35.0 / 85.0);
+
+      ctx.fillRect(tLowX, barY - 2, 2, barH + 4);
+      ctx.fillRect(tHighX, barY - 2, 2, barH + 4);
+      ctx.fillRect(tMultiX, barY - 2, 2, barH + 4);
     }
 
-    function renderLoop() {
-      if (viewMode === 'camera') {
-        drawCameraOverlay();
-      } else {
-        drawRadar();
+    /* =========================================================================
+       Main 60 FPS Animation Loop
+       ========================================================================= */
+    function renderAllCanvases() {
+      // Spatial Canvas
+      const sConf = checkCanvasResize(spatialCanvas);
+      if (spatialMode === '3d_room') {
+        render3DRoom(sConf.ctx, sConf.width, sConf.height);
+      } else if (spatialMode === 'polar_radar') {
+        renderPolarRadar(sConf.ctx, sConf.width, sConf.height);
+      } else if (spatialMode === 'subcarrier_matrix') {
+        renderSubcarrierMatrix(sConf.ctx, sConf.width, sConf.height);
       }
-      drawChart();
-      drawGauge();
-      requestAnimationFrame(renderLoop);
+
+      // Chart Canvas
+      const cConf = checkCanvasResize(chartCanvas);
+      renderChart(cConf.ctx, cConf.width, cConf.height);
+
+      // Gauge Canvas
+      const gConf = checkCanvasResize(gaugeCanvas);
+      renderGauge(gConf.ctx, gConf.width, gConf.height);
     }
-    requestAnimationFrame(renderLoop);
+
+    // Support URL search params & hash routing for deep-linking & deterministic preview
+    function handleInitialRoute() {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'polar_radar' || hash === 'subcarrier_matrix' || hash === '3d_room') {
+        switchSpatialMode(hash);
+      }
+      const params = new URLSearchParams(window.location.search);
+      const caseParam = params.get('case');
+      if (caseParam) {
+        const btn = document.getElementById(`case-${caseParam}`);
+        activateScenario(caseParam, btn);
+      }
+      const mock = params.get('mock_state');
+      if (mock) {
+        if (mock === 'single_walk') {
+          currentStateId = 1; currentStateName = "SINGLE HUMAN MOTION";
+          currentEMA = 27.5; currentRaw = 28.1; currentOccupants = 1;
+          currentTargets = [{"angle": 0.85, "dist": 0.55, "label": "Human #1"}];
+        } else if (mock === 'multi_human') {
+          currentStateId = 2; currentStateName = "MULTI-HUMAN OCCUPANCY";
+          currentEMA = 54.0; currentRaw = 58.2; currentOccupants = 2;
+          currentTargets = [
+            {"angle": 0.85, "dist": 0.55, "label": "Human #1"},
+            {"angle": 2.25, "dist": 0.70, "label": "Human #2"}
+          ];
+        } else if (mock === 'static_presence') {
+          currentStateId = 3; currentStateName = "STATIC PRESENCE (BREATHING)";
+          currentEMA = 2.4; currentRaw = 2.6; currentOccupants = 1;
+          currentTargets = [{"angle": 0.85, "dist": 0.55, "label": "Human #1 (Static)"}];
+        } else if (mock === 'packet_loss') {
+          currentStateId = 4; currentStateName = "RF LINK LOSS";
+          currentEMA = 0.0; currentRaw = 0.0; currentOccupants = 0; currentTargets = [];
+        }
+        updateMasterHUD(currentStateId, currentEMA, currentOccupants, mock);
+        document.getElementById('metric-ema').innerText = currentEMA.toFixed(2);
+        document.getElementById('metric-raw').innerText = currentRaw.toFixed(2);
+        document.getElementById('metric-count').innerText = currentOccupants;
+        renderAllCanvases();
+      }
+    }
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) switchSpatialMode(hash);
+    });
+    function renderMainLoop() {
+      renderAllCanvases();
+      requestAnimationFrame(renderMainLoop);
+    }
+
+    handleInitialRoute();
+
+    // Launch loop
+    requestAnimationFrame(renderMainLoop);
   </script>
 </body>
 </html>
