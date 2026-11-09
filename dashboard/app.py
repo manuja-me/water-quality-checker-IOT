@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 """
 Wi-Fi CSI Real-Time Telemetry & Radar Dashboard Host Server
-Hardened for Edge Cases:
-- Static presence retention (seated/sleeping human)
-- Impulse EMI spike rejection
-- Packet drop / link degradation watchdog
-- Environmental baseline drift
-- Multi-occupant spatial clustering
+Hardened for Edge Cases with Guaranteed Event Recording & CSV Export.
 """
 
 import sys
@@ -17,6 +12,7 @@ import argparse
 from urllib.parse import urlparse, parse_qs
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread, Lock
+from collections import deque
 
 try:
     import serial
@@ -25,6 +21,9 @@ except ImportError:
     HAVE_SERIAL = False
 
 telemetry_lock = Lock()
+pending_events = deque()
+session_log_records = []  # In-memory session recorder for CSV export
+
 latest_data = {
     "rssi": -58,
     "raw_var": 1.5,
@@ -39,7 +38,7 @@ latest_data = {
 }
 
 # Edge Case Simulation State Machine
-sim_override = None
+sim_override = "auto"
 sim_override_time = 0
 
 def resolve_state(state_id, ema_var, baseline):
@@ -83,6 +82,16 @@ def run_serial_listener(port, baudrate):
                     if state_id != last_state:
                         event = f"State Shift: {name} (EMA: {ema_var:.1f}, Base: {baseline:.1f})"
                         last_state = state_id
+                        with telemetry_lock:
+                            session_log_records.append({
+                                "time": time.strftime("%H:%M:%S"),
+                                "case": "Live Hardware",
+                                "state": name,
+                                "raw_var": raw_var,
+                                "ema_var": ema_var,
+                                "baseline": baseline,
+                                "event": event
+                            })
 
                     with telemetry_lock:
                         latest_data = {
@@ -102,40 +111,38 @@ def run_serial_listener(port, baudrate):
         run_mock_generator()
 
 def run_mock_generator():
-    global latest_data, sim_override, sim_override_time
+    global latest_data, sim_override, pending_events, session_log_records
     print("[*] Edge-case simulation engine active.")
     t = 0
     ema = 1.5
     baseline = 1.2
-    last_state = 0
+    last_case = ""
 
     while True:
         time.sleep(0.08)
         t += 1
-        now = time.time()
 
-        # Check for interactive user override
-        if sim_override and (now - sim_override_time < 8.0):
+        # Check mode: interactive manual lock or auto cycle
+        if sim_override != "auto":
             case = sim_override
         else:
-            # Automatic rotation across edge cases
             cycle = t % 420
             if cycle < 90:
                 case = "quiet"
             elif cycle < 150:
                 case = "single_walk"
             elif cycle < 230:
-                case = "static_presence"  # Person stopped walking and sat down
-            elif cycle < 250:
-                case = "microwave_spike"   # 1-frame EMI burst
-            elif cycle < 340:
-                case = "multi_human"       # 2 persons in room
-            elif cycle < 380:
-                case = "packet_loss"       # Wi-Fi link drop
+                case = "static_presence"
+            elif cycle < 260:
+                case = "microwave_spike"
+            elif cycle < 350:
+                case = "multi_human"
+            elif cycle < 390:
+                case = "packet_loss"
             else:
                 case = "quiet"
 
-        # Edge Case Logic Simulation
+        # Edge Case Logic
         if case == "quiet":
             raw = baseline + random.uniform(-0.3, 0.4)
             ema = (0.25 * raw) + (0.75 * ema)
@@ -147,41 +154,63 @@ def run_mock_generator():
             ema = (0.25 * raw) + (0.75 * ema)
             state_id = 1
             rssi = -58
-            desc = "Single Human Active Motion"
+            desc = "1-Human Active Motion"
         elif case == "static_presence":
-            # Gross motion ceased, but subtle micro-motion (breathing/heartbeat) holds state
             raw = baseline + random.uniform(1.2, 2.8)
             ema = (0.05 * raw) + (0.95 * ema)
             state_id = 3
             rssi = -57
-            desc = "Edge Case: Static Seated Occupant (Breathing Hold)"
+            desc = "Seated / Still Occupant (Breathing Hold)"
         elif case == "microwave_spike":
-            # Outlier rejection: huge 1-frame jump clamped by DSP
-            raw = 95.0 if (t % 15 == 0) else baseline + 0.5
-            ema = min(ema + 2.0, 6.0) # Clamped, does not breach 18.5 threshold
+            # Outlier spike clamped by Hampel filter
+            is_spike = (t % 12 == 0)
+            raw = 95.0 if is_spike else (baseline + 0.5)
+            ema = min(ema + 1.8, 6.2) # Clamped below 18.5 threshold
             state_id = 0
-            rssi = -72
-            desc = "Edge Case: 2.4 GHz EMI Spike (Clamped & Rejected)"
+            rssi = -72 if is_spike else -58
+            desc = "Microwave / EMI Spike (Clamped & Filtered)"
         elif case == "multi_human":
             raw = baseline + random.uniform(48.0, 80.0)
             ema = (0.25 * raw) + (0.75 * ema)
             state_id = 2
             rssi = -61
-            desc = "Multi-Human Crossing Behind Wall"
+            desc = "Multi-Human Crossing"
         elif case == "packet_loss":
             raw = 0.0
             ema = 0.0
             state_id = 4
             rssi = -99
-            desc = "Edge Case: Wi-Fi Link Degradation (Watchdog Fired)"
+            desc = "Wi-Fi Link Drop (Watchdog Triggered)"
+        else:
+            raw = baseline
+            ema = baseline
+            state_id = 0
+            rssi = -55
+            desc = case
 
         name, count, targets = resolve_state(state_id, ema, baseline)
-        event = None
-        if state_id != last_state:
-            event = f"Edge Case Transition: {desc}"
-            last_state = state_id
 
+        # Detect case transition and record
+        event = None
+        if case != last_case:
+            event = f"Scenario Active: {desc}"
+            last_case = case
+            with telemetry_lock:
+                session_log_records.append({
+                    "time": time.strftime("%H:%M:%S"),
+                    "case": desc,
+                    "state": name,
+                    "raw_var": round(raw, 2),
+                    "ema_var": round(ema, 2),
+                    "baseline": round(baseline, 2),
+                    "event": event
+                })
+
+        # Pop any queued manual trigger events
         with telemetry_lock:
+            if pending_events:
+                event = pending_events.popleft()
+
             latest_data = {
                 "rssi": rssi,
                 "raw_var": round(raw, 2),
@@ -191,6 +220,7 @@ def run_mock_generator():
                 "state_name": name,
                 "occupant_count": count,
                 "active_edge_case": desc,
+                "active_key": case,
                 "targets": targets,
                 "event": event
             }
@@ -221,15 +251,51 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                     break
                 time.sleep(0.08)
         elif parsed.path == '/trigger-edge-case':
-            global sim_override, sim_override_time
+            global sim_override, pending_events, session_log_records
             qs = parse_qs(parsed.query)
             case = qs.get('case', ['quiet'])[0]
             sim_override = case
-            sim_override_time = time.time()
+
+            case_labels = {
+                "quiet": "Quiet Baseline (No Motion)",
+                "single_walk": "1-Human Walking",
+                "static_presence": "Seated / Still (Breathing Hold)",
+                "microwave_spike": "Microwave / EMI Spike (Hampel Rejection)",
+                "multi_human": "Multi-Human Crowd",
+                "packet_loss": "Packet Drop / Link Degradation",
+                "auto": "Auto Scenario Rotation"
+            }
+            label = case_labels.get(case, case)
+            log_msg = f"[Manual Trigger] Activated: {label}"
+
+            with telemetry_lock:
+                pending_events.append(log_msg)
+                session_log_records.append({
+                    "time": time.strftime("%H:%M:%S"),
+                    "case": label,
+                    "state": "TRIGGERED",
+                    "raw_var": 0.0,
+                    "ema_var": 0.0,
+                    "baseline": 1.2,
+                    "event": log_msg
+                })
+
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok", "applied_case": case}).encode('utf-8'))
+            self.wfile.write(json.dumps({"status": "ok", "case": case, "label": label}).encode('utf-8'))
+        elif parsed.path == '/export-log':
+            # Export session log as CSV
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/csv')
+            self.send_header('Content-Disposition', 'attachment; filename="csi_simulation_events.csv"')
+            self.end_headers()
+            csv_lines = ["Timestamp,Scenario,State,RawVariance,EMAVariance,Baseline,EventDetails\n"]
+            with telemetry_lock:
+                for rec in session_log_records:
+                    clean_event = rec["event"].replace(',', ';') if rec["event"] else ""
+                    csv_lines.append(f"{rec['time']},{rec['case']},{rec['state']},{rec['raw_var']},{rec['ema_var']},{rec['baseline']},{clean_event}\n")
+            self.wfile.write("".join(csv_lines).encode('utf-8'))
         else:
             self.send_error(404)
 

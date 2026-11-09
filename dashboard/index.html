@@ -47,27 +47,41 @@
 
     .edge-controls {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       align-items: center;
       background: var(--card-bg);
-      padding: 8px 12px;
+      padding: 10px 14px;
       border-radius: 6px;
       border: 1px solid var(--border);
       margin-bottom: 14px;
     }
-    .edge-controls span { font-size: 0.8rem; color: var(--text-dim); }
+    .edge-controls span { font-size: 0.82rem; color: var(--text-dim); }
     .btn {
       background: #21262d;
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 4px;
       font-size: 0.78rem;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: all 0.15s;
     }
-    .btn:hover { background: #30363d; }
-    .btn:active { background: var(--accent); color: #fff; }
+    .btn:hover { background: #30363d; border-color: #8b949e; }
+    .btn.active {
+      background: #1f6feb;
+      color: #fff;
+      border-color: #58a6ff;
+      font-weight: bold;
+      box-shadow: 0 0 6px rgba(88, 166, 255, 0.4);
+    }
+    .btn-aux {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed var(--border);
+      font-size: 0.75rem;
+      padding: 4px 8px;
+    }
+    .btn-aux:hover { background: rgba(255, 255, 255, 0.1); }
 
     .grid {
       display: grid;
@@ -115,16 +129,23 @@
       color: var(--text-dim);
       margin-top: 4px;
     }
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
     #log-list {
-      height: 120px;
+      height: 125px;
       overflow-y: auto;
       font-size: 0.8rem;
       font-family: monospace;
       background: #000;
-      padding: 8px;
+      padding: 10px;
       border-radius: 4px;
+      border: 1px solid #21262d;
     }
-    .log-item { margin-bottom: 4px; }
+    .log-item { margin-bottom: 5px; line-height: 1.3; }
   </style>
 </head>
 <body>
@@ -139,15 +160,16 @@
     </div>
   </header>
 
-  <!-- Interactive Edge Case Simulator Panel -->
+  <!-- Interactive Edge Case Simulator Controls -->
   <div class="edge-controls">
-    <span><b>Simulate Edge Cases:</b></span>
-    <button class="btn" onclick="setCase('quiet')">1. Quiet Baseline</button>
-    <button class="btn" onclick="setCase('single_walk')">2. 1-Human Walking</button>
-    <button class="btn" onclick="setCase('static_presence')">3. Seated / Still (Breathing)</button>
-    <button class="btn" onclick="setCase('microwave_spike')">4. Microwave / EMI Spike</button>
-    <button class="btn" onclick="setCase('multi_human')">5. 2-Human Crowd</button>
-    <button class="btn" onclick="setCase('packet_loss')">6. Packet Drop / Loss</button>
+    <span><b>Select Edge Case:</b></span>
+    <button id="btn-auto" class="btn active" onclick="setCase('auto', this)">🔄 Auto Cycle</button>
+    <button id="btn-quiet" class="btn" onclick="setCase('quiet', this)">1. Quiet Room</button>
+    <button id="btn-single_walk" class="btn" onclick="setCase('single_walk', this)">2. 1-Human Walking</button>
+    <button id="btn-static_presence" class="btn" onclick="setCase('static_presence', this)">3. Seated / Breathing</button>
+    <button id="btn-microwave_spike" class="btn" onclick="setCase('microwave_spike', this)">4. Microwave / EMI Spike</button>
+    <button id="btn-multi_human" class="btn" onclick="setCase('multi_human', this)">5. Multi-Human Crowd</button>
+    <button id="btn-packet_loss" class="btn" onclick="setCase('packet_loss', this)">6. Packet Drop</button>
   </div>
 
   <div class="grid">
@@ -189,12 +211,15 @@
 
     <!-- Section 4: System Monitor & History -->
     <div class="card">
-      <h2>4. Edge-Case Diagnostic Event Stream</h2>
-      <div style="margin-bottom:8px; font-size:0.78rem; color:var(--text-dim);">
-        <span>Adaptive $T_1 = B(t)+16.0$ | $T_2 = B(t)+35.0$ | Hampel Clamped | 12s Static Hold</span>
+      <div class="log-header">
+        <h2>4. Recorded Edge-Case Event Stream</h2>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-aux" onclick="window.location.href='/export-log'">📥 Download CSV Log</button>
+          <button class="btn btn-aux" onclick="clearLog()">🗑️ Clear</button>
+        </div>
       </div>
       <div id="log-list">
-        <div class="log-item" style="color:#8b949e;">[System] Edge-case filtering pipeline operational.</div>
+        <div class="log-item" style="color:#58a6ff;">[System] Edge-case event recording initialized. Ready.</div>
       </div>
     </div>
   </div>
@@ -216,8 +241,36 @@
     let currentStateName = "EMPTY";
     let currentTargets = [];
     let currentRSSI = -58;
+    let lastLoggedEvent = "";
 
-    function setCase(caseName) {
+    function logToUI(msg, color="#58a6ff") {
+      const log = document.getElementById('log-list');
+      const item = document.createElement('div');
+      item.className = 'log-item';
+      item.style.color = color;
+      item.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      log.prepend(item);
+    }
+
+    function clearLog() {
+      document.getElementById('log-list').innerHTML = '<div class="log-item" style="color:#8b949e;">[System] Log cleared by user.</div>';
+    }
+
+    function setCase(caseName, btnElem) {
+      document.querySelectorAll('.edge-controls .btn').forEach(b => b.classList.remove('active'));
+      if (btnElem) btnElem.classList.add('active');
+
+      const labels = {
+        'auto': 'Auto Scenario Rotation',
+        'quiet': 'Scenario 1: Quiet Room',
+        'single_walk': 'Scenario 2: 1-Human Walking',
+        'static_presence': 'Scenario 3: Seated / Breathing Hold',
+        'microwave_spike': 'Scenario 4: Microwave EMI Outlier',
+        'multi_human': 'Scenario 5: Multi-Human Crowd',
+        'packet_loss': 'Scenario 6: Wi-Fi Packet Drop'
+      };
+      logToUI(`▶ [User Trigger] Selected: ${labels[caseName] || caseName}`, '#58a6ff');
+
       fetch(`/trigger-edge-case?case=${caseName}`);
     }
 
@@ -265,13 +318,18 @@
       history.push({ raw: currentRaw, ema: currentEMA, base: currentBase, state: currentStateId });
       if (history.length > 80) history.shift();
 
-      if (data.event) {
-        const log = document.getElementById('log-list');
-        const item = document.createElement('div');
-        item.className = 'log-item';
-        item.style.color = currentStateId >= 2 ? '#f85149' : (currentStateId === 3 ? '#a371f7' : (currentStateId === 1 ? '#d29922' : '#3fb950'));
-        item.innerText = `[${new Date().toLocaleTimeString()}] ${data.event}`;
-        log.prepend(item);
+      // Record any newly generated scenario event
+      if (data.event && data.event !== lastLoggedEvent) {
+        lastLoggedEvent = data.event;
+        let color = "#3fb950";
+        if (data.event.includes("Multi-Human")) color = "#f85149";
+        else if (data.event.includes("Seated") || data.event.includes("Breathing")) color = "#a371f7";
+        else if (data.event.includes("Walking") || data.event.includes("Motion")) color = "#d29922";
+        else if (data.event.includes("Microwave") || data.event.includes("EMI")) color = "#e3b341";
+        else if (data.event.includes("Drop") || data.event.includes("Loss")) color = "#ff7b72";
+        else if (data.event.includes("Manual Trigger")) color = "#58a6ff";
+
+        logToUI(data.event, color);
       }
     };
 
