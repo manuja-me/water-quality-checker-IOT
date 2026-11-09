@@ -2,287 +2,632 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Wi-Fi CSI Room Camera & Radar Monitoring Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraSense | Wi-Fi CSI Edge Intelligence System</title>
   <style>
     :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --border: #30363d;
-      --accent: #58a6ff;
-      --alert: #f85149;
-      --warning: #d29922;
-      --static-blue: #a371f7;
-      --safe: #3fb950;
-      --text: #c9d1d9;
-      --text-dim: #8b949e;
+      --bg-base: #06090e;
+      --bg-surface: #0c121d;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-glass: rgba(17, 24, 39, 0.6);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-active: rgba(56, 189, 248, 0.4);
+      --border-card: rgba(148, 163, 184, 0.12);
+
+      --accent-cyan: #38bdf8;
+      --accent-blue: #0284c7;
+      --emerald-safe: #10b981;
+      --amber-warn: #f59e0b;
+      --crimson-alert: #ef4444;
+      --purple-static: #8b5cf6;
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, monospace;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-      background: var(--bg);
-      color: var(--text);
-      padding: 16px;
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 45%);
+      color: var(--text-main);
+      padding: 16px 20px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* Top Navigation Bar */
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
-    }
-    h1 { font-size: 1.25rem; color: #fff; }
-    .badge-group { display: flex; gap: 8px; }
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    .badge-ok { background: rgba(63, 185, 80, 0.2); color: var(--safe); border: 1px solid var(--safe); }
-    .badge-static { background: rgba(163, 113, 247, 0.2); color: var(--static-blue); border: 1px solid var(--static-blue); }
-    .badge-warn { background: rgba(210, 153, 34, 0.2); color: var(--warning); border: 1px solid var(--warning); }
-    .badge-alert { background: rgba(248, 81, 73, 0.2); color: var(--alert); border: 1px solid var(--alert); }
-
-    .edge-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      background: var(--card-bg);
-      padding: 10px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
+      padding: 12px 18px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
       margin-bottom: 14px;
     }
-    .edge-controls span { font-size: 0.82rem; color: var(--text-dim); }
-    .btn {
-      background: #21262d;
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .btn:hover { background: #30363d; border-color: #8b949e; }
-    .btn.active {
-      background: #1f6feb;
-      color: #fff;
-      border-color: #58a6ff;
-      font-weight: bold;
-      box-shadow: 0 0 6px rgba(88, 166, 255, 0.4);
-    }
-    .btn-aux {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px dashed var(--border);
-      font-size: 0.75rem;
-      padding: 4px 8px;
-    }
-    .btn-aux:hover { background: rgba(255, 255, 255, 0.1); }
 
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+    }
+
+    .brand-logo svg {
+      width: 18px;
+      height: 18px;
+      fill: #ffffff;
+    }
+
+    .brand-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-text .version-tag {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .header-telemetry {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .status-ok {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--emerald-safe);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-warn {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--amber-warn);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .status-alert {
+      background: rgba(239, 68, 68, 0.14);
+      color: var(--crimson-alert);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      animation: pulseAlert 1.5s infinite;
+    }
+
+    .status-static {
+      background: rgba(139, 92, 246, 0.14);
+      color: var(--purple-static);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+      50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.35); }
+    }
+
+    /* Simulation & Edge Case Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin-bottom: 16px;
+    }
+
+    .toolbar-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .scenario-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-scenario {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-scenario:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-scenario.active {
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      font-weight: 600;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+
+    /* Main Responsive Grid */
     .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.15fr 0.85fr;
       grid-gap: 16px;
     }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 14px;
+
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: 1fr; }
     }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .card h2 {
-      font-size: 0.92rem;
-      color: var(--text-dim);
+
+    .card-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .viewer-container {
+
+    .card-title svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--accent-cyan);
+    }
+
+    /* Segmented View Switcher */
+    .segmented-control {
+      display: inline-flex;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .segment-btn {
+      background: transparent;
+      color: var(--text-dim);
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .segment-btn:hover {
+      color: var(--text-main);
+    }
+
+    .segment-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    /* Canvas Containers */
+    .canvas-viewport {
       position: relative;
       width: 100%;
-      height: 300px;
-      background: #000;
-      border-radius: 4px;
+      height: 310px;
+      background: #020408;
+      border-radius: 8px;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.04);
     }
+
     video#webcamFeed {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: cover;
       display: none;
-      filter: brightness(0.7) contrast(1.1);
+      filter: brightness(0.65) contrast(1.15) saturate(0.9);
     }
+
     canvas#mainCanvas {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       display: block;
     }
-    canvas#chartCanvas, canvas#gaugeCanvas {
+
+    canvas#chartCanvas {
       display: block;
       width: 100%;
-      background: #000;
-      border-radius: 4px;
+      height: 310px;
+      background: #020408;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
     }
-    .metrics {
+
+    /* KPI Metrics Cluster */
+    .kpi-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 10px;
+      gap: 12px;
+      margin-bottom: 12px;
     }
-    .metric-box {
-      background: rgba(255,255,255,0.03);
-      padding: 10px;
-      border-radius: 4px;
-      text-align: center;
+
+    @media (max-width: 640px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
     }
-    .metric-val {
-      font-size: 1.25rem;
-      font-weight: bold;
-      color: var(--accent);
+
+    .kpi-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+      overflow: hidden;
     }
-    .metric-lbl {
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--border-subtle);
+    }
+
+    .kpi-card.highlight-cyan::before { background: var(--accent-cyan); }
+    .kpi-card.highlight-emerald::before { background: var(--emerald-safe); }
+    .kpi-card.highlight-amber::before { background: var(--amber-warn); }
+    .kpi-card.highlight-purple::before { background: var(--purple-static); }
+
+    .kpi-label {
       font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .kpi-sub {
+      font-size: 0.68rem;
       color: var(--text-dim);
       margin-top: 4px;
-    }
-    .log-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      gap: 4px;
     }
-    #log-list {
-      height: 125px;
+
+    /* Gauge Canvas */
+    canvas#gaugeCanvas {
+      display: block;
+      width: 100%;
+      height: 100px;
+      background: #020408;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    /* Event Terminal */
+    .terminal-container {
+      background: #020408;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      height: 145px;
       overflow-y: auto;
-      font-size: 0.8rem;
-      font-family: monospace;
-      background: #000;
-      padding: 10px;
-      border-radius: 4px;
-      border: 1px solid #21262d;
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      scrollbar-width: thin;
+      scrollbar-color: #334155 #020408;
     }
-    .log-item { margin-bottom: 5px; line-height: 1.3; }
+
+    .terminal-item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 5px;
+      line-height: 1.4;
+    }
+
+    .terminal-time {
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      flex-shrink: 0;
+    }
+
+    .terminal-tag {
+      font-size: 0.64rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .terminal-text {
+      color: var(--text-main);
+      word-break: break-all;
+    }
+
+    .btn-icon {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
   </style>
 </head>
 <body>
+
+  <!-- Top Header Bar -->
   <header>
-    <div>
-      <h1>Wi-Fi CSI Room Camera & Radar Monitoring</h1>
-      <span id="active-case-text" style="font-size:0.8rem; color:var(--accent);">Active Scenario: Normal Baseline Monitoring</span>
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>AuraSense <span class="version-tag">EDGE DSP v2.4</span></h1>
+        <p>Wi-Fi 802.11 CSI Through-Wall Presence & Multi-Occupant Radar</p>
+      </div>
     </div>
-    <div class="badge-group">
-      <div id="state-pill" class="badge badge-ok">STATE: EMPTY</div>
-      <div id="link-pill" class="badge badge-ok">LINK: 80 Hz OK</div>
+
+    <div class="header-telemetry">
+      <div id="status-pill" class="status-badge status-ok">
+        <div class="status-dot"></div>
+        <span id="status-text">ZONE CLEAR</span>
+      </div>
+      <div id="link-pill" class="status-badge status-ok">
+        <div class="status-dot"></div>
+        <span id="link-text">LINK: 60 Hz (-58 dBm)</span>
+      </div>
     </div>
   </header>
 
-  <!-- Interactive Edge Case Simulator Controls -->
-  <div class="edge-controls">
-    <span><b>Select Edge Case:</b></span>
-    <button id="btn-auto" class="btn active" onclick="setCase('auto', this)">🔄 Auto Cycle</button>
-    <button id="btn-quiet" class="btn" onclick="setCase('quiet', this)">1. Quiet Room</button>
-    <button id="btn-single_walk" class="btn" onclick="setCase('single_walk', this)">2. 1-Human Walking</button>
-    <button id="btn-static_presence" class="btn" onclick="setCase('static_presence', this)">3. Seated / Breathing</button>
-    <button id="btn-microwave_spike" class="btn" onclick="setCase('microwave_spike', this)">4. Microwave / EMI Spike</button>
-    <button id="btn-multi_human" class="btn" onclick="setCase('multi_human', this)">5. Multi-Human Crowd</button>
-    <button id="btn-packet_loss" class="btn" onclick="setCase('packet_loss', this)">6. Packet Drop</button>
+  <!-- Interactive Edge-Case Testing Bar -->
+  <div class="toolbar">
+    <div class="toolbar-label">Scenario Presets:</div>
+    <div class="scenario-group">
+      <button id="btn-auto" class="btn-scenario active" onclick="setCase('auto', this)">🔄 Auto Cycle</button>
+      <button id="btn-quiet" class="btn-scenario" onclick="setCase('quiet', this)">1. Baseline Quiet</button>
+      <button id="btn-single_walk" class="btn-scenario" onclick="setCase('single_walk', this)">2. Single Human Motion</button>
+      <button id="btn-static_presence" class="btn-scenario" onclick="setCase('static_presence', this)">3. Seated / Still</button>
+      <button id="btn-microwave_spike" class="btn-scenario" onclick="setCase('microwave_spike', this)">4. EMI / Microwave Outlier</button>
+      <button id="btn-multi_human" class="btn-scenario" onclick="setCase('multi_human', this)">5. Multi-Occupant Crowd</button>
+      <button id="btn-packet_loss" class="btn-scenario" onclick="setCase('packet_loss', this)">6. Link Interruption</button>
+    </div>
   </div>
 
+  <!-- Primary Dashboard Grid -->
   <div class="grid">
-    <!-- Section 1: Room Camera Overlay / Radar Toggle -->
+
+    <!-- Card 1: Spatial Monitoring Viewport -->
     <div class="card">
       <div class="card-header">
-        <h2 id="view-title">1. Room Camera Overlay (Wi-Fi Antenna Zone)</h2>
-        <div style="display:flex; gap:6px;">
-          <button id="btn-mode-cam" class="btn active" onclick="setViewMode('camera')">📷 Camera Overlay</button>
-          <button id="btn-mode-radar" class="btn" onclick="setViewMode('radar')">🎯 Radar Mode</button>
-          <button id="btn-webcam" class="btn btn-aux" onclick="toggleWebcam()">📹 Live Webcam Feed</button>
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span id="view-title">Spatial Radar & Fresnel Multipath Overlay</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div class="segmented-control">
+            <button id="btn-mode-cam" class="segment-btn active" onclick="setViewMode('camera')">Room Camera</button>
+            <button id="btn-mode-radar" class="segment-btn" onclick="setViewMode('radar')">Radar Sweep</button>
+          </div>
+          <button id="btn-webcam" class="btn-icon" onclick="toggleWebcam()">📹 Webcam AR</button>
         </div>
       </div>
-      <div class="viewer-container">
+      <div class="canvas-viewport">
         <video id="webcamFeed" autoplay playsinline muted></video>
-        <canvas id="mainCanvas" width="500" height="300"></canvas>
+        <canvas id="mainCanvas" width="600" height="310"></canvas>
       </div>
     </div>
 
-    <!-- Section 2: Real-time Variance & Adaptive Baseline -->
+    <!-- Card 2: CSI Spectral Disruption & Baseline Drift -->
     <div class="card">
       <div class="card-header">
-        <h2>2. Dynamic Baseline & Disturbance Spectrum</h2>
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17l-5-5-3 3-4-7"/></svg>
+          <span>Real-Time Disturbance Variance $V(t)$</span>
+        </div>
+        <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-dim);">
+          T1: <b style="color:var(--amber-warn);">+16.0</b> | T2: <b style="color:var(--crimson-alert);">+35.0</b>
+        </span>
       </div>
-      <canvas id="chartCanvas" width="500" height="300"></canvas>
+      <canvas id="chartCanvas" width="500" height="310"></canvas>
     </div>
 
-    <!-- Section 3: Telemetry & Resilience Indicators -->
+    <!-- Card 3: Quantitative Edge Metrics -->
     <div class="card">
       <div class="card-header">
-        <h2>3. Edge-DSP Resilience Metrics</h2>
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          <span>Deterministic Edge DSP State</span>
+        </div>
+        <span id="active-scenario-tag" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--accent-cyan);">Mode: Auto Cycle</span>
       </div>
-      <div class="metrics">
-        <div class="metric-box">
-          <div id="val-state" class="metric-val" style="font-size:1.0rem; color:var(--safe)">EMPTY</div>
-          <div class="metric-lbl">Decision State</div>
+
+      <div class="kpi-row">
+        <div class="kpi-card highlight-cyan">
+          <div class="kpi-label">Disruption ($V_{\text{EMA}}$)</div>
+          <div id="kpi-ema" class="kpi-value">1.42</div>
+          <div class="kpi-sub">Raw: <span id="kpi-raw" style="color:#fff;">1.50</span></div>
         </div>
-        <div class="metric-box">
-          <div id="val-base" class="metric-val">1.20</div>
-          <div class="metric-lbl">Adaptive Baseline</div>
+
+        <div class="kpi-card highlight-emerald">
+          <div class="kpi-label">Adaptive Base ($B_t$)</div>
+          <div id="kpi-base" class="kpi-value">1.20</div>
+          <div class="kpi-sub">Floor: Stable</div>
         </div>
-        <div class="metric-box">
-          <div id="val-var" class="metric-val">1.45</div>
-          <div class="metric-lbl">Raw Variance</div>
+
+        <div class="kpi-card highlight-amber">
+          <div class="kpi-label">Occupancy Count</div>
+          <div id="kpi-count" class="kpi-value" style="color:var(--emerald-safe);">0</div>
+          <div class="kpi-sub" id="kpi-occupant-desc">Room Empty</div>
         </div>
-        <div class="metric-box">
-          <div id="val-ema" class="metric-val">1.38</div>
-          <div class="metric-lbl">Smoothed EMA</div>
+
+        <div class="kpi-card highlight-purple">
+          <div class="kpi-label">Current State</div>
+          <div id="kpi-state" class="kpi-value" style="font-size:1.05rem; color:var(--emerald-safe);">EMPTY</div>
+          <div class="kpi-sub">Refractory: Safe</div>
         </div>
       </div>
-      <canvas id="gaugeCanvas" width="500" height="150"></canvas>
+
+      <canvas id="gaugeCanvas" width="600" height="90"></canvas>
     </div>
 
-    <!-- Section 4: System Monitor & History -->
+    <!-- Card 4: Event Logging & Audit Trail -->
     <div class="card">
-      <div class="log-header">
-        <h2>4. Recorded Edge-Case Event Stream</h2>
+      <div class="card-header">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <span>Edge Security Event Log</span>
+        </div>
         <div style="display:flex; gap:6px;">
-          <button class="btn btn-aux" onclick="window.location.href='/export-log'">📥 Download CSV Log</button>
-          <button class="btn btn-aux" onclick="clearLog()">🗑️ Clear</button>
+          <button class="btn-icon" onclick="window.location.href='/export-log'">📥 Export CSV</button>
+          <button class="btn-icon" onclick="clearTerminal()">🗑️ Clear</button>
         </div>
       </div>
-      <div id="log-list">
-        <div class="log-item" style="color:#58a6ff;">[System] Edge-case event recording initialized. Ready.</div>
+
+      <div id="terminal-list" class="terminal-container">
+        <div class="terminal-item">
+          <span class="terminal-time">[SYS INIT]</span>
+          <span class="terminal-tag" style="background:rgba(56,189,248,0.15); color:var(--accent-cyan);">READY</span>
+          <span class="terminal-text">Edge DSP telemetry connected. Monitoring Wi-Fi CSI carrier space.</span>
+        </div>
       </div>
     </div>
+
   </div>
 
   <script>
-    const canvas = document.getElementById('mainCanvas');
-    const ctx = canvas.getContext('2d');
-    const chart = document.getElementById('chartCanvas');
-    const cCtx = chart.getContext('2d');
-    const gauge = document.getElementById('gaugeCanvas');
-    const gCtx = gauge.getContext('2d');
+    // Canvas contexts
+    const mainCanvas = document.getElementById('mainCanvas');
+    const mCtx = mainCanvas.getContext('2d');
+    const chartCanvas = document.getElementById('chartCanvas');
+    const cCtx = chartCanvas.getContext('2d');
+    const gaugeCanvas = document.getElementById('gaugeCanvas');
+    const gCtx = gaugeCanvas.getContext('2d');
     const webcamVideo = document.getElementById('webcamFeed');
 
-    let viewMode = 'camera'; // 'camera' or 'radar'
+    let viewMode = 'camera';
     let useWebcam = false;
     let history = [];
     let radarAngle = 0;
-    let currentRaw = 1.5;
-    let currentEMA = 1.4;
-    let currentBase = 1.2;
+
+    let currentRaw = 1.45;
+    let currentEMA = 1.38;
+    let currentBase = 1.20;
     let currentStateId = 0;
-    let currentStateName = "EMPTY";
+    let currentStateName = "EMPTY (QUIET)";
+    let currentOccupants = 0;
     let currentTargets = [];
     let currentRSSI = -58;
     let lastLoggedEvent = "";
@@ -292,8 +637,8 @@
       document.getElementById('btn-mode-cam').classList.toggle('active', mode === 'camera');
       document.getElementById('btn-mode-radar').classList.toggle('active', mode === 'radar');
       document.getElementById('view-title').innerText = mode === 'camera' 
-        ? "1. Room Camera Overlay (Wi-Fi Antenna Zone)" 
-        : "1. Spatial Radar & Target Sectors";
+        ? "Spatial Room Camera & Fresnel Multipath Overlay" 
+        : "Polar Spatial Radar & Sector Tracking";
     }
 
     async function toggleWebcam() {
@@ -304,54 +649,69 @@
           const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
           webcamVideo.srcObject = stream;
           webcamVideo.style.display = 'block';
-          btn.classList.add('active');
+          btn.style.borderColor = "var(--accent-cyan)";
+          btn.style.color = "var(--accent-cyan)";
           btn.innerText = "🛑 Disable Webcam";
           setViewMode('camera');
         } catch (err) {
-          alert("Webcam access denied or unavailable: " + err.message);
+          alert("Webcam access unavailable: " + err.message);
           useWebcam = false;
           webcamVideo.style.display = 'none';
         }
       } else {
         if (webcamVideo.srcObject) {
-          webcamVideo.srcObject.getTracks().forEach(track => track.stop());
+          webcamVideo.srcObject.getTracks().forEach(t => t.stop());
         }
         webcamVideo.style.display = 'none';
-        btn.classList.remove('active');
-        btn.innerText = "📹 Live Webcam Feed";
+        btn.style.borderColor = "";
+        btn.style.color = "";
+        btn.innerText = "📹 Webcam AR";
       }
     }
 
-    function logToUI(msg, color="#58a6ff") {
-      const log = document.getElementById('log-list');
+    function logToTerminal(tag, text, tagColor, textColor="#f8fafc") {
+      const list = document.getElementById('terminal-list');
       const item = document.createElement('div');
-      item.className = 'log-item';
-      item.style.color = color;
-      item.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-      log.prepend(item);
+      item.className = 'terminal-item';
+      const timeStr = new Date().toTimeString().split(' ')[0];
+
+      item.innerHTML = `
+        <span class="terminal-time">[${timeStr}]</span>
+        <span class="terminal-tag" style="background:${tagColor}22; color:${tagColor}; border:1px solid ${tagColor}44;">${tag}</span>
+        <span class="terminal-text" style="color:${textColor};">${text}</span>
+      `;
+      list.prepend(item);
     }
 
-    function clearLog() {
-      document.getElementById('log-list').innerHTML = '<div class="log-item" style="color:#8b949e;">[System] Log cleared by user.</div>';
+    function clearTerminal() {
+      document.getElementById('terminal-list').innerHTML = `
+        <div class="terminal-item">
+          <span class="terminal-time">[${new Date().toTimeString().split(' ')[0]}]</span>
+          <span class="terminal-tag" style="background:rgba(148,163,184,0.15); color:var(--text-dim);">CLEARED</span>
+          <span class="terminal-text" style="color:var(--text-dim);">Log cleared by operator.</span>
+        </div>
+      `;
     }
 
     function setCase(caseName, btnElem) {
-      document.querySelectorAll('.edge-controls .btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.btn-scenario').forEach(b => b.classList.remove('active'));
       if (btnElem) btnElem.classList.add('active');
 
       const labels = {
-        'auto': 'Auto Scenario Rotation',
-        'quiet': 'Scenario 1: Quiet Room',
-        'single_walk': 'Scenario 2: 1-Human Walking',
-        'static_presence': 'Scenario 3: Seated / Breathing Hold',
-        'microwave_spike': 'Scenario 4: Microwave EMI Outlier',
-        'multi_human': 'Scenario 5: Multi-Human Crowd',
-        'packet_loss': 'Scenario 6: Wi-Fi Packet Drop'
+        'auto': 'Auto Cycle',
+        'quiet': 'Baseline Quiet',
+        'single_walk': 'Single Human Motion',
+        'static_presence': 'Seated / Breathing',
+        'microwave_spike': 'Microwave Outlier',
+        'multi_human': 'Multi-Occupant Crowd',
+        'packet_loss': 'Link Interruption'
       };
-      logToUI(`▶ [User Trigger] Selected: ${labels[caseName] || caseName}`, '#58a6ff');
+      document.getElementById('active-scenario-tag').innerText = `Preset: ${labels[caseName] || caseName}`;
+      logToTerminal('TRIGGER', `Operator activated scenario: ${labels[caseName] || caseName}`, '#38bdf8');
       fetch(`/trigger-edge-case?case=${caseName}`);
     }
 
+    // Connect to Server-Sent Events stream
     const evtSource = new EventSource('/stream');
     evtSource.onmessage = (e) => {
       const data = JSON.parse(e.data);
@@ -361,324 +721,366 @@
       currentBase = data.baseline;
       currentStateId = data.state_id;
       currentStateName = data.state_name;
+      currentOccupants = data.occupant_count;
       currentTargets = data.targets || [];
 
-      document.getElementById('active-case-text').innerText = `Active Scenario: ${data.active_edge_case}`;
-      document.getElementById('val-base').innerText = currentBase.toFixed(2);
-      document.getElementById('val-var').innerText = currentRaw.toFixed(2);
-      document.getElementById('val-ema').innerText = currentEMA.toFixed(2);
-      document.getElementById('val-state').innerText = currentStateName.split(' ')[0];
+      // Update KPI metrics
+      document.getElementById('kpi-ema').innerText = currentEMA.toFixed(2);
+      document.getElementById('kpi-raw').innerText = currentRaw.toFixed(2);
+      document.getElementById('kpi-base').innerText = currentBase.toFixed(2);
+      document.getElementById('kpi-count').innerText = currentOccupants;
 
-      const statePill = document.getElementById('state-pill');
+      const occDesc = document.getElementById('kpi-occupant-desc');
+      const stateVal = document.getElementById('kpi-state');
+      const statusPill = document.getElementById('status-pill');
+      const statusText = document.getElementById('status-text');
       const linkPill = document.getElementById('link-pill');
+      const linkText = document.getElementById('link-text');
+
+      linkText.innerText = currentStateId === 4 ? "LINK DOWN (TIMEOUT)" : `LINK: 60 Hz (${currentRSSI} dBm)`;
+      linkPill.className = currentStateId === 4 ? "status-badge status-alert" : "status-badge status-ok";
 
       if (currentStateId === 0) {
-        statePill.className = "badge badge-ok";
-        statePill.innerText = "STATE: EMPTY";
-        linkPill.className = "badge badge-ok";
-        linkPill.innerText = `${currentRSSI} dBm (OK)`;
+        stateVal.innerText = "EMPTY";
+        stateVal.style.color = "var(--emerald-safe)";
+        occDesc.innerText = "Room Empty";
+        statusPill.className = "status-badge status-ok";
+        statusText.innerText = "ZONE CLEAR";
       } else if (currentStateId === 1) {
-        statePill.className = "badge badge-warn";
-        statePill.innerText = "STATE: 1-HUMAN MOTION";
+        stateVal.innerText = "ACTIVE MOTION";
+        stateVal.style.color = "var(--amber-warn)";
+        occDesc.innerText = "1 Target Detected";
+        statusPill.className = "status-badge status-warn";
+        statusText.innerText = "HUMAN MOTION DETECTED";
       } else if (currentStateId === 2) {
-        statePill.className = "badge badge-alert";
-        statePill.innerText = "STATE: MULTI-HUMAN";
+        stateVal.innerText = "CROWD DISTURBANCE";
+        stateVal.style.color = "var(--crimson-alert)";
+        occDesc.innerText = `${currentOccupants}+ Humans Detected`;
+        statusPill.className = "status-badge status-alert";
+        statusText.innerText = "HIGH MULTI-OCCUPANT ENERGY";
       } else if (currentStateId === 3) {
-        statePill.className = "badge badge-static";
-        statePill.innerText = "STATE: SEATED / STILL";
+        stateVal.innerText = "STILL / BREATHING";
+        stateVal.style.color = "var(--purple-static)";
+        occDesc.innerText = "Occupant Seated";
+        statusPill.className = "status-badge status-static";
+        statusText.innerText = "STATIC OCCUPANT HOLD";
       } else if (currentStateId === 4) {
-        statePill.className = "badge badge-alert";
-        statePill.innerText = "STATE: LINK LOSS";
-        linkPill.className = "badge badge-alert";
-        linkPill.innerText = "PACKET LOSS";
+        stateVal.innerText = "PACKET LOSS";
+        stateVal.style.color = "var(--crimson-alert)";
+        occDesc.innerText = "Watchdog Tripped";
+        statusPill.className = "status-badge status-alert";
+        statusText.innerText = "RF SIGNAL INTERRUPTED";
       }
 
       history.push({ raw: currentRaw, ema: currentEMA, base: currentBase, state: currentStateId });
-      if (history.length > 80) history.shift();
+      if (history.length > 90) history.shift();
 
       if (data.event && data.event !== lastLoggedEvent) {
         lastLoggedEvent = data.event;
-        let color = "#3fb950";
-        if (data.event.includes("Multi-Human")) color = "#f85149";
-        else if (data.event.includes("Seated") || data.event.includes("Breathing")) color = "#a371f7";
-        else if (data.event.includes("Walking") || data.event.includes("Motion")) color = "#d29922";
-        else if (data.event.includes("Microwave") || data.event.includes("EMI")) color = "#e3b341";
-        else if (data.event.includes("Drop") || data.event.includes("Loss")) color = "#ff7b72";
-        else if (data.event.includes("Manual Trigger")) color = "#58a6ff";
+        let color = "#10b981";
+        let tag = "NORMAL";
+        if (data.event.includes("Crowd") || data.event.includes("Multi")) { color = "#ef4444"; tag = "ALERT"; }
+        else if (data.event.includes("Seated") || data.event.includes("Breathing")) { color = "#8b5cf6"; tag = "STATIC"; }
+        else if (data.event.includes("Walking") || data.event.includes("Motion")) { color = "#f59e0b"; tag = "MOTION"; }
+        else if (data.event.includes("Microwave") || data.event.includes("EMI")) { color = "#38bdf8"; tag = "FILTER"; }
+        else if (data.event.includes("Drop") || data.event.includes("Loss")) { color = "#ef4444"; tag = "CRITICAL"; }
 
-        logToUI(data.event, color);
+        logToTerminal(tag, data.event, color);
       }
     };
 
-    // Draw Perspective Room Camera Overlay
+    // Modern Perspective Room Overlay
     function drawCameraOverlay() {
-      const w = canvas.width, h = canvas.height;
+      const w = mainCanvas.width, h = mainCanvas.height;
 
-      // If webcam is not active, render high-tech wireframe room interior
       if (!useWebcam) {
-        ctx.fillStyle = "#070b10";
-        ctx.fillRect(0, 0, w, h);
+        mCtx.fillStyle = "#020408";
+        mCtx.fillRect(0, 0, w, h);
 
-        // Perspective 3D Room Grid lines
-        ctx.strokeStyle = "rgba(48, 54, 61, 0.4)";
-        ctx.lineWidth = 1;
+        // Perspective 3D Room Grid
+        mCtx.strokeStyle = "rgba(148, 163, 184, 0.08)";
+        mCtx.lineWidth = 1;
 
-        // Floor perspective lines
-        for (let x = 0; x <= w; x += 50) {
-          ctx.beginPath();
-          ctx.moveTo(x, h);
-          ctx.lineTo(w / 2 + (x - w / 2) * 0.35, h * 0.55);
-          ctx.stroke();
+        for (let x = 0; x <= w; x += 60) {
+          mCtx.beginPath();
+          mCtx.moveTo(x, h);
+          mCtx.lineTo(w / 2 + (x - w / 2) * 0.35, h * 0.52);
+          mCtx.stroke();
         }
-        // Horizontal floor depth lines
-        for (let y = h * 0.55; y <= h; y += 25) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(w, y);
-          ctx.stroke();
+        for (let y = h * 0.52; y <= h; y += 28) {
+          mCtx.beginPath();
+          mCtx.moveTo(0, y);
+          mCtx.lineTo(w, y);
+          mCtx.stroke();
         }
 
-        // Room back wall & doorway
-        ctx.strokeStyle = "#30363d";
-        ctx.strokeRect(w * 0.25, h * 0.2, w * 0.5, h * 0.35);
-        ctx.strokeRect(w * 0.4, h * 0.25, w * 0.2, h * 0.3); // Door frame
+        // Back Wall Architecture
+        mCtx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+        mCtx.strokeRect(w * 0.22, h * 0.18, w * 0.56, h * 0.36);
+        mCtx.strokeRect(w * 0.42, h * 0.24, w * 0.16, h * 0.30); // Door frame
       } else {
-        // Clear canvas with transparent clear when webcam video is behind
-        ctx.clearRect(0, 0, w, h);
+        mCtx.clearRect(0, 0, w, h);
       }
 
-      // 1. Draw Wi-Fi Antennas Mounted in Front of the Room
-      // Tx Antenna (Left)
-      ctx.fillStyle = "#58a6ff";
-      ctx.fillRect(25, 45, 12, 28);
-      ctx.beginPath();
-      ctx.arc(31, 45, 14, Math.PI, 0);
-      ctx.strokeStyle = "#58a6ff";
-      ctx.stroke();
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 10px monospace";
-      ctx.fillText("TX ANTENNA (ESP32)", 20, 90);
+      // Antenna Nodes (Tx Left, Rx Right)
+      drawAntennaNode(35, 60, "TX ILLUMINATOR", "#38bdf8");
+      drawAntennaNode(w - 35, 60, "RX SENSING NODE", "#10b981");
 
-      // Rx Antenna (Right)
-      ctx.fillStyle = "#3fb950";
-      ctx.fillRect(w - 37, 45, 12, 28);
-      ctx.beginPath();
-      ctx.arc(w - 31, 45, 14, Math.PI, 0);
-      ctx.strokeStyle = "#3fb950";
-      ctx.stroke();
-      ctx.fillStyle = "#fff";
-      ctx.fillText("RX ANTENNA (SENSING)", w - 140, 90);
+      // Dynamic RF Fresnel Multipath Cone
+      const pulse = (Math.sin(Date.now() / 250) + 1) * 0.5;
+      const rfAlpha = currentStateId === 4 ? 0.05 : (0.12 + pulse * 0.15);
+      const rfColor = currentStateId === 2 ? `rgba(239, 68, 68, ${rfAlpha})` : `rgba(56, 189, 248, ${rfAlpha})`;
 
-      // 2. Render RF Fresnel Multipath Propagation Cone
-      const rfGlow = (Math.sin(Date.now() / 200) + 1) * 0.5;
-      ctx.strokeStyle = currentStateId === 4 
-        ? "rgba(248, 81, 73, 0.2)" 
-        : `rgba(88, 166, 255, ${0.15 + rfGlow * 0.15})`;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 6]);
-      ctx.beginPath();
-      ctx.moveTo(35, 55);
-      ctx.bezierCurveTo(w * 0.3, h * 0.7, w * 0.7, h * 0.7, w - 35, 55);
-      ctx.stroke();
+      mCtx.strokeStyle = rfColor;
+      mCtx.lineWidth = 2;
+      mCtx.setLineDash([8, 6]);
 
-      ctx.beginPath();
-      ctx.moveTo(35, 55);
-      ctx.bezierCurveTo(w * 0.4, h * 0.4, w * 0.6, h * 0.4, w - 35, 55);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      mCtx.beginPath();
+      mCtx.moveTo(35, 65);
+      mCtx.bezierCurveTo(w * 0.3, h * 0.72, w * 0.7, h * 0.72, w - 35, 65);
+      mCtx.stroke();
 
-      // 3. Render Camera HUD Overlay Boxes based on Detected State
+      mCtx.beginPath();
+      mCtx.moveTo(35, 65);
+      mCtx.bezierCurveTo(w * 0.38, h * 0.42, w * 0.62, h * 0.42, w - 35, 65);
+      mCtx.stroke();
+      mCtx.setLineDash([]);
+
+      // Tactical Target Bounding HUD
       if (currentStateId === 0) {
-        // Empty Room - Safe Scanning Grid
-        ctx.strokeStyle = "rgba(63, 185, 80, 0.4)";
-        ctx.strokeRect(w * 0.3, h * 0.45, w * 0.4, h * 0.4);
-        ctx.fillStyle = "rgba(63, 185, 80, 0.8)";
-        ctx.font = "11px monospace";
-        ctx.fillText("✔ ROOM MONITORING: NO HUMAN MOTION IN SENSING ZONE", w * 0.22, h * 0.42);
+        mCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
+        mCtx.lineWidth = 1;
+        mCtx.setLineDash([4, 4]);
+        mCtx.strokeRect(w * 0.32, h * 0.42, w * 0.36, h * 0.44);
+        mCtx.setLineDash([]);
+        mCtx.fillStyle = "rgba(16, 185, 129, 0.85)";
+        mCtx.font = "600 11px var(--font-mono)";
+        mCtx.fillText("ZONE SCAN: NOMINAL (NO PERTURBATION)", w * 0.26, h * 0.38);
       } else if (currentStateId === 1) {
-        // Single Human Detected - Active Bounding Box
-        const bx = w * 0.42, by = h * 0.38, bw = 85, bh = 145;
-        drawTargetHUD(bx, by, bw, bh, "HUMAN #1 (ACTIVE MOTION)", "#d29922");
+        drawTacticalTarget(w * 0.45, h * 0.36, 85, 150, "TARGET #1: ACTIVE MOTION", "#f59e0b");
       } else if (currentStateId === 2) {
-        // Multiple Humans Detected - 2 Bounding Boxes
-        drawTargetHUD(w * 0.28, h * 0.36, 80, 145, "HUMAN #1 (LEFT ZONE)", "#f85149");
-        drawTargetHUD(w * 0.58, h * 0.40, 80, 140, "HUMAN #2 (RIGHT ZONE)", "#f85149");
+        drawTacticalTarget(w * 0.28, h * 0.34, 80, 150, "TARGET #1 (SECTOR A)", "#ef4444");
+        drawTacticalTarget(w * 0.58, h * 0.38, 80, 145, "TARGET #2 (SECTOR B)", "#ef4444");
       } else if (currentStateId === 3) {
-        // Static Presence (Seated / Still Breathing)
-        const bx = w * 0.45, by = h * 0.48, bw = 90, bh = 105;
-        drawTargetHUD(bx, by, bw, bh, "SEATED OCCUPANT (BREATHING HOLD)", "#a371f7");
+        drawTacticalTarget(w * 0.46, h * 0.46, 88, 110, "OCCUPANT #1 (SEATED BREATHING)", "#8b5cf6");
       } else if (currentStateId === 4) {
-        // Packet Drop Warning HUD
-        ctx.fillStyle = "rgba(248, 81, 73, 0.25)";
-        ctx.fillRect(0, 0, w, h);
-        ctx.strokeStyle = "#f85149";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(20, 20, w - 40, h - 40);
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 14px monospace";
-        ctx.fillText("⚠ RF SIGNAL LOSS: NO WI-FI CSI PACKETS RECEIVED", w * 0.2, h * 0.5);
+        mCtx.fillStyle = "rgba(239, 68, 68, 0.18)";
+        mCtx.fillRect(0, 0, w, h);
+        mCtx.strokeStyle = "rgba(239, 68, 68, 0.8)";
+        mCtx.lineWidth = 2;
+        mCtx.strokeRect(16, 16, w - 32, h - 32);
+        mCtx.fillStyle = "#ffffff";
+        mCtx.font = "700 13px var(--font-mono)";
+        mCtx.fillText("⚠ RF SIGNAL LOSS: PACKET STREAM TIMEOUT", w * 0.24, h * 0.52);
       }
 
-      // Timestamp & Camera watermark
-      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-      ctx.font = "10px monospace";
-      ctx.fillText(`CAM-01 [RF OVERLAY] | 2.4 GHz CH6 | ${new Date().toLocaleTimeString()}`, 12, h - 12);
+      // Watermark
+      mCtx.fillStyle = "rgba(148, 163, 184, 0.5)";
+      mCtx.font = "10px var(--font-mono)";
+      mCtx.fillText(`CH6 2437MHz | 802.11n HT20 | ${new Date().toTimeString().split(' ')[0]}`, 14, h - 14);
     }
 
-    function drawTargetHUD(x, y, w, h, label, color) {
-      // Corner brackets (tactical HUD style)
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
-      const corner = 12;
+    function drawAntennaNode(x, y, label, color) {
+      mCtx.fillStyle = color;
+      mCtx.beginPath();
+      mCtx.arc(x, y, 6, 0, Math.PI * 2);
+      mCtx.fill();
 
-      // Top-Left
-      ctx.beginPath(); ctx.moveTo(x, y + corner); ctx.lineTo(x, y); ctx.lineTo(x + corner, y); ctx.stroke();
-      // Top-Right
-      ctx.beginPath(); ctx.moveTo(x + w - corner, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + corner); ctx.stroke();
-      // Bottom-Left
-      ctx.beginPath(); ctx.moveTo(x, y + h - corner); ctx.lineTo(x, y + h); ctx.lineTo(x + corner, y + h); ctx.stroke();
-      // Bottom-Right
-      ctx.beginPath(); ctx.moveTo(x + w - corner, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - corner); ctx.stroke();
+      mCtx.strokeStyle = color;
+      mCtx.lineWidth = 1.5;
+      mCtx.beginPath();
+      mCtx.arc(x, y, 12, 0, Math.PI * 2);
+      mCtx.stroke();
 
-      // Semi-transparent center presence glow
-      ctx.fillStyle = color.replace(')', ', 0.12)').replace('rgb', 'rgba');
-      ctx.fillRect(x, y, w, h);
-
-      // Label badge
-      ctx.fillStyle = color;
-      ctx.fillRect(x - 2, y - 20, ctx.measureText(label).width + 12, 18);
-      ctx.fillStyle = "#000";
-      ctx.font = "bold 10px monospace";
-      ctx.fillText(label, x + 4, y - 7);
+      mCtx.fillStyle = color;
+      mCtx.font = "700 9px var(--font-mono)";
+      mCtx.fillText(label, x > 150 ? x - 110 : x + 16, y + 3);
     }
 
-    // Traditional Radar Fallback View
+    function drawTacticalTarget(x, y, bw, bh, label, color) {
+      const corner = 14;
+      mCtx.strokeStyle = color;
+      mCtx.lineWidth = 2.5;
+
+      // Precision brackets
+      mCtx.beginPath(); mCtx.moveTo(x, y + corner); mCtx.lineTo(x, y); mCtx.lineTo(x + corner, y); mCtx.stroke();
+      mCtx.beginPath(); mCtx.moveTo(x + bw - corner, y); mCtx.lineTo(x + bw, y); mCtx.lineTo(x + bw, y + corner); mCtx.stroke();
+      mCtx.beginPath(); mCtx.moveTo(x, y + bh - corner); mCtx.lineTo(x, y + bh); mCtx.lineTo(x + corner, y + bh); mCtx.stroke();
+      mCtx.beginPath(); mCtx.moveTo(x + bw - corner, y + bh); mCtx.lineTo(x + bw, y + bh); mCtx.lineTo(x + bw, y + bh - corner); mCtx.stroke();
+
+      // Soft glow center
+      mCtx.fillStyle = color.replace(')', ', 0.12)').replace('rgb', 'rgba');
+      mCtx.fillRect(x, y, bw, bh);
+
+      // Tactical pill header
+      mCtx.fillStyle = color;
+      mCtx.fillRect(x - 2, y - 22, mCtx.measureText(label).width + 16, 20);
+      mCtx.fillStyle = "#000000";
+      mCtx.font = "700 9px var(--font-mono)";
+      mCtx.fillText(label, x + 6, y - 8);
+    }
+
+    // Polar Radar Fallback View
     function drawRadar() {
-      const w = canvas.width, h = canvas.height;
-      const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 20;
+      const w = mainCanvas.width, h = mainCanvas.height;
+      const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 25;
 
-      ctx.fillStyle = "rgba(0, 5, 10, 0.2)";
-      ctx.fillRect(0, 0, w, h);
+      mCtx.fillStyle = "rgba(2, 4, 8, 0.25)";
+      mCtx.fillRect(0, 0, w, h);
 
       // Distance rings
-      ctx.strokeStyle = "#1b4d2e";
-      ctx.lineWidth = 1;
+      mCtx.strokeStyle = "rgba(16, 185, 129, 0.22)";
+      mCtx.lineWidth = 1;
       for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
-        ctx.stroke();
+        mCtx.beginPath();
+        mCtx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
+        mCtx.stroke();
       }
 
-      // Sweep line
+      // Crosshairs
+      mCtx.beginPath();
+      mCtx.moveTo(cx - r, cy); mCtx.lineTo(cx + r, cy);
+      mCtx.moveTo(cx, cy - r); mCtx.lineTo(cx, cy + r);
+      mCtx.stroke();
+
+      // Sweep
       radarAngle += 0.04;
-      ctx.strokeStyle = currentStateId === 4 ? "#d29922" : "#3fb950";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + r * Math.cos(radarAngle), cy + r * Math.sin(radarAngle));
-      ctx.stroke();
+      const sx = cx + r * Math.cos(radarAngle);
+      const sy = cy + r * Math.sin(radarAngle);
+
+      mCtx.strokeStyle = currentStateId === 4 ? "#ef4444" : "#10b981";
+      mCtx.lineWidth = 2;
+      mCtx.beginPath();
+      mCtx.moveTo(cx, cy);
+      mCtx.lineTo(sx, sy);
+      mCtx.stroke();
 
       // Targets
       currentTargets.forEach((tgt, idx) => {
         const tx = cx + (r * tgt.dist) * Math.cos(tgt.angle);
         const ty = cy + (r * tgt.dist) * Math.sin(tgt.angle);
         const isStatic = currentStateId === 3;
-        const color = isStatic ? "rgba(163, 113, 247, " : (idx === 0 ? "rgba(248, 81, 73, " : "rgba(210, 153, 34, ");
+        const color = isStatic ? "#8b5cf6" : (idx === 0 ? "#ef4444" : "#f59e0b");
 
-        ctx.fillStyle = color + "0.85)";
-        ctx.beginPath();
-        ctx.arc(tx, ty, isStatic ? 7 : 9 + Math.sin(Date.now() / 150) * 3, 0, Math.PI * 2);
-        ctx.fill();
+        mCtx.fillStyle = color;
+        mCtx.beginPath();
+        mCtx.arc(tx, ty, isStatic ? 6 : 8, 0, Math.PI * 2);
+        mCtx.fill();
 
-        ctx.strokeStyle = color + "0.4)";
-        ctx.beginPath();
-        ctx.arc(tx, ty, 18 + (Date.now() / (isStatic ? 80 : 30)) % 14, 0, Math.PI * 2);
-        ctx.stroke();
+        mCtx.strokeStyle = color;
+        mCtx.lineWidth = 1.5;
+        mCtx.beginPath();
+        mCtx.arc(tx, ty, 16 + (Date.now() / 40 + idx * 8) % 16, 0, Math.PI * 2);
+        mCtx.stroke();
 
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px monospace";
-        ctx.fillText(tgt.label, tx - 28, ty - 14);
+        mCtx.fillStyle = "#ffffff";
+        mCtx.font = "600 10px var(--font-mono)";
+        mCtx.fillText(tgt.label, tx - 24, ty - 12);
       });
     }
 
+    // High-Resolution Smooth Chart
     function drawChart() {
-      const w = chart.width, h = chart.height;
-      cCtx.fillStyle = "#090d13";
+      const w = chartCanvas.width, h = chartCanvas.height;
+      cCtx.fillStyle = "#020408";
       cCtx.fillRect(0, 0, w, h);
 
-      const maxVal = 90.0;
-      const ySingle = h - ((currentBase + 16.0) / maxVal) * (h - 30) - 15;
-      const yMulti  = h - ((currentBase + 35.0) / maxVal) * (h - 30) - 15;
+      // Grid Lines
+      cCtx.strokeStyle = "rgba(148, 163, 184, 0.06)";
+      cCtx.lineWidth = 1;
+      for (let y = 30; y < h - 20; y += 45) {
+        cCtx.beginPath();
+        cCtx.moveTo(0, y);
+        cCtx.lineTo(w, y);
+        cCtx.stroke();
+      }
 
+      const maxVal = 90.0;
+      const ySingle = h - ((currentBase + 16.0) / maxVal) * (h - 40) - 20;
+      const yMulti  = h - ((currentBase + 35.0) / maxVal) * (h - 40) - 20;
+
+      // Threshold lines
       cCtx.setLineDash([4, 4]);
-      cCtx.strokeStyle = "rgba(210, 153, 34, 0.6)";
+      cCtx.strokeStyle = "rgba(245, 158, 11, 0.5)";
       cCtx.beginPath(); cCtx.moveTo(0, ySingle); cCtx.lineTo(w, ySingle); cCtx.stroke();
 
-      cCtx.strokeStyle = "rgba(248, 81, 73, 0.7)";
+      cCtx.strokeStyle = "rgba(239, 68, 68, 0.6)";
       cCtx.beginPath(); cCtx.moveTo(0, yMulti); cCtx.lineTo(w, yMulti); cCtx.stroke();
       cCtx.setLineDash([]);
 
       if (history.length < 2) return;
-      const step = w / 80;
+      const step = w / 90;
 
-      // Draw Dynamic Baseline (dashed green)
+      // 1. Draw Baseline Line (Dashed Green)
       cCtx.setLineDash([2, 4]);
-      cCtx.strokeStyle = "rgba(63, 185, 80, 0.5)";
+      cCtx.strokeStyle = "rgba(16, 185, 129, 0.55)";
       cCtx.beginPath();
       history.forEach((pt, i) => {
         const x = i * step;
-        const y = h - (pt.base / maxVal) * (h - 30) - 15;
+        const y = h - (pt.base / maxVal) * (h - 40) - 20;
         if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
       });
       cCtx.stroke();
       cCtx.setLineDash([]);
 
-      // Draw Raw Variance
-      cCtx.strokeStyle = "#8b949e";
+      // 2. Draw Raw Variance (Muted)
+      cCtx.strokeStyle = "rgba(148, 163, 184, 0.35)";
       cCtx.lineWidth = 1;
       cCtx.beginPath();
       history.forEach((pt, i) => {
         const x = i * step;
-        const y = h - (Math.min(pt.raw, maxVal) / maxVal) * (h - 30) - 15;
+        const y = h - (Math.min(pt.raw, maxVal) / maxVal) * (h - 40) - 20;
         if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
       });
       cCtx.stroke();
 
-      // Draw Smoothed EMA
-      cCtx.strokeStyle = currentStateId === 3 ? "#a371f7" : "#58a6ff";
-      cCtx.lineWidth = 2;
+      // 3. Draw EMA Curve with Gradient Glow
+      const emaColor = currentStateId === 3 ? "#8b5cf6" : (currentStateId === 2 ? "#ef4444" : (currentStateId === 1 ? "#f59e0b" : "#38bdf8"));
+      cCtx.strokeStyle = emaColor;
+      cCtx.lineWidth = 2.5;
       cCtx.beginPath();
       history.forEach((pt, i) => {
         const x = i * step;
-        const y = h - (Math.min(pt.ema, maxVal) / maxVal) * (h - 30) - 15;
+        const y = h - (Math.min(pt.ema, maxVal) / maxVal) * (h - 40) - 20;
         if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
       });
       cCtx.stroke();
     }
 
+    // Modern Gauge Bar
     function drawGauge() {
-      const w = gauge.width, h = gauge.height;
-      gCtx.fillStyle = "#090d13";
+      const w = gaugeCanvas.width, h = gaugeCanvas.height;
+      gCtx.fillStyle = "#020408";
       gCtx.fillRect(0, 0, w, h);
 
-      const barW = w - 40;
+      const barX = 20, barY = 32, barW = w - 40, barH = 16;
       const pct = Math.min(currentEMA / 85.0, 1.0);
 
-      gCtx.fillStyle = "#21262d";
-      gCtx.fillRect(20, 45, barW, 26);
+      // Track background
+      gCtx.fillStyle = "rgba(255, 255, 255, 0.05)";
+      gCtx.roundRect(barX, barY, barW, barH, 4);
+      gCtx.fill();
 
-      gCtx.fillStyle = currentStateId === 2 ? "#f85149" : (currentStateId === 3 ? "#a371f7" : (currentStateId === 1 ? "#d29922" : "#3fb950"));
-      gCtx.fillRect(20, 45, barW * pct, 26);
+      // Fill gradient
+      const grad = gCtx.createLinearGradient(barX, 0, barX + barW, 0);
+      grad.addColorStop(0, "#10b981");
+      grad.addColorStop(0.35, "#f59e0b");
+      grad.addColorStop(0.7, "#ef4444");
 
-      gCtx.fillStyle = "#c9d1d9";
-      gCtx.font = "11px monospace";
-      gCtx.fillText("Baseline", 20, 90);
-      gCtx.fillText("1-Human Motion", 20 + barW * (18.0 / 85.0) - 40, 90);
-      gCtx.fillText("Multi-Human", 20 + barW * (37.0 / 85.0) - 30, 90);
-      gCtx.fillText("Max", w - 45, 90);
+      gCtx.fillStyle = grad;
+      gCtx.roundRect(barX, barY, Math.max(barW * pct, 4), barH, 4);
+      gCtx.fill();
+
+      // Scale markings
+      gCtx.fillStyle = "rgba(148, 163, 184, 0.6)";
+      gCtx.font = "10px var(--font-mono)";
+      gCtx.fillText("0.0 (Floor)", barX, barY + 34);
+      gCtx.fillText("T1: Motion (16.0)", barX + barW * (16.0 / 85.0) - 30, barY + 34);
+      gCtx.fillText("T2: Crowd (35.0)", barX + barW * (35.0 / 85.0) - 30, barY + 34);
+      gCtx.fillText("85.0+", barX + barW - 32, barY + 34);
     }
 
-    function loop() {
+    function renderLoop() {
       if (viewMode === 'camera') {
         drawCameraOverlay();
       } else {
@@ -686,9 +1088,9 @@
       }
       drawChart();
       drawGauge();
-      requestAnimationFrame(loop);
+      requestAnimationFrame(renderLoop);
     }
-    requestAnimationFrame(loop);
+    requestAnimationFrame(renderLoop);
   </script>
 </body>
 </html>
