@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Wi-Fi CSI Edge-Case Hardened Dashboard</title>
+  <title>Wi-Fi CSI Room Camera & Radar Monitoring Dashboard</title>
   <style>
     :root {
       --bg: #0d1117;
@@ -94,14 +94,41 @@
       border-radius: 6px;
       padding: 14px;
     }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
     .card h2 {
       font-size: 0.92rem;
       color: var(--text-dim);
-      margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    canvas {
+    .viewer-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    video#webcamFeed {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: none;
+      filter: brightness(0.7) contrast(1.1);
+    }
+    canvas#mainCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+    }
+    canvas#chartCanvas, canvas#gaugeCanvas {
       display: block;
       width: 100%;
       background: #000;
@@ -151,7 +178,7 @@
 <body>
   <header>
     <div>
-      <h1>Wi-Fi CSI Edge-Case Hardened Dashboard</h1>
+      <h1>Wi-Fi CSI Room Camera & Radar Monitoring</h1>
       <span id="active-case-text" style="font-size:0.8rem; color:var(--accent);">Active Scenario: Normal Baseline Monitoring</span>
     </div>
     <div class="badge-group">
@@ -173,21 +200,35 @@
   </div>
 
   <div class="grid">
-    <!-- Section 1: Room Scanner / Radar -->
+    <!-- Section 1: Room Camera Overlay / Radar Toggle -->
     <div class="card">
-      <h2>1. Spatial Radar & Target Sectors</h2>
-      <canvas id="radarCanvas" width="400" height="300"></canvas>
+      <div class="card-header">
+        <h2 id="view-title">1. Room Camera Overlay (Wi-Fi Antenna Zone)</h2>
+        <div style="display:flex; gap:6px;">
+          <button id="btn-mode-cam" class="btn active" onclick="setViewMode('camera')">📷 Camera Overlay</button>
+          <button id="btn-mode-radar" class="btn" onclick="setViewMode('radar')">🎯 Radar Mode</button>
+          <button id="btn-webcam" class="btn btn-aux" onclick="toggleWebcam()">📹 Live Webcam Feed</button>
+        </div>
+      </div>
+      <div class="viewer-container">
+        <video id="webcamFeed" autoplay playsinline muted></video>
+        <canvas id="mainCanvas" width="500" height="300"></canvas>
+      </div>
     </div>
 
     <!-- Section 2: Real-time Variance & Adaptive Baseline -->
     <div class="card">
-      <h2>2. Dynamic Baseline & Disturbance Spectrum</h2>
-      <canvas id="chartCanvas" width="400" height="300"></canvas>
+      <div class="card-header">
+        <h2>2. Dynamic Baseline & Disturbance Spectrum</h2>
+      </div>
+      <canvas id="chartCanvas" width="500" height="300"></canvas>
     </div>
 
     <!-- Section 3: Telemetry & Resilience Indicators -->
     <div class="card">
-      <h2>3. Edge-DSP Resilience Metrics</h2>
+      <div class="card-header">
+        <h2>3. Edge-DSP Resilience Metrics</h2>
+      </div>
       <div class="metrics">
         <div class="metric-box">
           <div id="val-state" class="metric-val" style="font-size:1.0rem; color:var(--safe)">EMPTY</div>
@@ -206,7 +247,7 @@
           <div class="metric-lbl">Smoothed EMA</div>
         </div>
       </div>
-      <canvas id="gaugeCanvas" width="400" height="150"></canvas>
+      <canvas id="gaugeCanvas" width="500" height="150"></canvas>
     </div>
 
     <!-- Section 4: System Monitor & History -->
@@ -225,13 +266,16 @@
   </div>
 
   <script>
-    const radar = document.getElementById('radarCanvas');
-    const rCtx = radar.getContext('2d');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
     const chart = document.getElementById('chartCanvas');
     const cCtx = chart.getContext('2d');
     const gauge = document.getElementById('gaugeCanvas');
     const gCtx = gauge.getContext('2d');
+    const webcamVideo = document.getElementById('webcamFeed');
 
+    let viewMode = 'camera'; // 'camera' or 'radar'
+    let useWebcam = false;
     let history = [];
     let radarAngle = 0;
     let currentRaw = 1.5;
@@ -242,6 +286,41 @@
     let currentTargets = [];
     let currentRSSI = -58;
     let lastLoggedEvent = "";
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      document.getElementById('btn-mode-cam').classList.toggle('active', mode === 'camera');
+      document.getElementById('btn-mode-radar').classList.toggle('active', mode === 'radar');
+      document.getElementById('view-title').innerText = mode === 'camera' 
+        ? "1. Room Camera Overlay (Wi-Fi Antenna Zone)" 
+        : "1. Spatial Radar & Target Sectors";
+    }
+
+    async function toggleWebcam() {
+      useWebcam = !useWebcam;
+      const btn = document.getElementById('btn-webcam');
+      if (useWebcam) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+          webcamVideo.srcObject = stream;
+          webcamVideo.style.display = 'block';
+          btn.classList.add('active');
+          btn.innerText = "🛑 Disable Webcam";
+          setViewMode('camera');
+        } catch (err) {
+          alert("Webcam access denied or unavailable: " + err.message);
+          useWebcam = false;
+          webcamVideo.style.display = 'none';
+        }
+      } else {
+        if (webcamVideo.srcObject) {
+          webcamVideo.srcObject.getTracks().forEach(track => track.stop());
+        }
+        webcamVideo.style.display = 'none';
+        btn.classList.remove('active');
+        btn.innerText = "📹 Live Webcam Feed";
+      }
+    }
 
     function logToUI(msg, color="#58a6ff") {
       const log = document.getElementById('log-list');
@@ -270,7 +349,6 @@
         'packet_loss': 'Scenario 6: Wi-Fi Packet Drop'
       };
       logToUI(`▶ [User Trigger] Selected: ${labels[caseName] || caseName}`, '#58a6ff');
-
       fetch(`/trigger-edge-case?case=${caseName}`);
     }
 
@@ -318,7 +396,6 @@
       history.push({ raw: currentRaw, ema: currentEMA, base: currentBase, state: currentStateId });
       if (history.length > 80) history.shift();
 
-      // Record any newly generated scenario event
       if (data.event && data.event !== lastLoggedEvent) {
         lastLoggedEvent = data.event;
         let color = "#3fb950";
@@ -333,30 +410,173 @@
       }
     };
 
+    // Draw Perspective Room Camera Overlay
+    function drawCameraOverlay() {
+      const w = canvas.width, h = canvas.height;
+
+      // If webcam is not active, render high-tech wireframe room interior
+      if (!useWebcam) {
+        ctx.fillStyle = "#070b10";
+        ctx.fillRect(0, 0, w, h);
+
+        // Perspective 3D Room Grid lines
+        ctx.strokeStyle = "rgba(48, 54, 61, 0.4)";
+        ctx.lineWidth = 1;
+
+        // Floor perspective lines
+        for (let x = 0; x <= w; x += 50) {
+          ctx.beginPath();
+          ctx.moveTo(x, h);
+          ctx.lineTo(w / 2 + (x - w / 2) * 0.35, h * 0.55);
+          ctx.stroke();
+        }
+        // Horizontal floor depth lines
+        for (let y = h * 0.55; y <= h; y += 25) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+
+        // Room back wall & doorway
+        ctx.strokeStyle = "#30363d";
+        ctx.strokeRect(w * 0.25, h * 0.2, w * 0.5, h * 0.35);
+        ctx.strokeRect(w * 0.4, h * 0.25, w * 0.2, h * 0.3); // Door frame
+      } else {
+        // Clear canvas with transparent clear when webcam video is behind
+        ctx.clearRect(0, 0, w, h);
+      }
+
+      // 1. Draw Wi-Fi Antennas Mounted in Front of the Room
+      // Tx Antenna (Left)
+      ctx.fillStyle = "#58a6ff";
+      ctx.fillRect(25, 45, 12, 28);
+      ctx.beginPath();
+      ctx.arc(31, 45, 14, Math.PI, 0);
+      ctx.strokeStyle = "#58a6ff";
+      ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 10px monospace";
+      ctx.fillText("TX ANTENNA (ESP32)", 20, 90);
+
+      // Rx Antenna (Right)
+      ctx.fillStyle = "#3fb950";
+      ctx.fillRect(w - 37, 45, 12, 28);
+      ctx.beginPath();
+      ctx.arc(w - 31, 45, 14, Math.PI, 0);
+      ctx.strokeStyle = "#3fb950";
+      ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.fillText("RX ANTENNA (SENSING)", w - 140, 90);
+
+      // 2. Render RF Fresnel Multipath Propagation Cone
+      const rfGlow = (Math.sin(Date.now() / 200) + 1) * 0.5;
+      ctx.strokeStyle = currentStateId === 4 
+        ? "rgba(248, 81, 73, 0.2)" 
+        : `rgba(88, 166, 255, ${0.15 + rfGlow * 0.15})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(35, 55);
+      ctx.bezierCurveTo(w * 0.3, h * 0.7, w * 0.7, h * 0.7, w - 35, 55);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(35, 55);
+      ctx.bezierCurveTo(w * 0.4, h * 0.4, w * 0.6, h * 0.4, w - 35, 55);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 3. Render Camera HUD Overlay Boxes based on Detected State
+      if (currentStateId === 0) {
+        // Empty Room - Safe Scanning Grid
+        ctx.strokeStyle = "rgba(63, 185, 80, 0.4)";
+        ctx.strokeRect(w * 0.3, h * 0.45, w * 0.4, h * 0.4);
+        ctx.fillStyle = "rgba(63, 185, 80, 0.8)";
+        ctx.font = "11px monospace";
+        ctx.fillText("✔ ROOM MONITORING: NO HUMAN MOTION IN SENSING ZONE", w * 0.22, h * 0.42);
+      } else if (currentStateId === 1) {
+        // Single Human Detected - Active Bounding Box
+        const bx = w * 0.42, by = h * 0.38, bw = 85, bh = 145;
+        drawTargetHUD(bx, by, bw, bh, "HUMAN #1 (ACTIVE MOTION)", "#d29922");
+      } else if (currentStateId === 2) {
+        // Multiple Humans Detected - 2 Bounding Boxes
+        drawTargetHUD(w * 0.28, h * 0.36, 80, 145, "HUMAN #1 (LEFT ZONE)", "#f85149");
+        drawTargetHUD(w * 0.58, h * 0.40, 80, 140, "HUMAN #2 (RIGHT ZONE)", "#f85149");
+      } else if (currentStateId === 3) {
+        // Static Presence (Seated / Still Breathing)
+        const bx = w * 0.45, by = h * 0.48, bw = 90, bh = 105;
+        drawTargetHUD(bx, by, bw, bh, "SEATED OCCUPANT (BREATHING HOLD)", "#a371f7");
+      } else if (currentStateId === 4) {
+        // Packet Drop Warning HUD
+        ctx.fillStyle = "rgba(248, 81, 73, 0.25)";
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = "#f85149";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(20, 20, w - 40, h - 40);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 14px monospace";
+        ctx.fillText("⚠ RF SIGNAL LOSS: NO WI-FI CSI PACKETS RECEIVED", w * 0.2, h * 0.5);
+      }
+
+      // Timestamp & Camera watermark
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.font = "10px monospace";
+      ctx.fillText(`CAM-01 [RF OVERLAY] | 2.4 GHz CH6 | ${new Date().toLocaleTimeString()}`, 12, h - 12);
+    }
+
+    function drawTargetHUD(x, y, w, h, label, color) {
+      // Corner brackets (tactical HUD style)
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      const corner = 12;
+
+      // Top-Left
+      ctx.beginPath(); ctx.moveTo(x, y + corner); ctx.lineTo(x, y); ctx.lineTo(x + corner, y); ctx.stroke();
+      // Top-Right
+      ctx.beginPath(); ctx.moveTo(x + w - corner, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + corner); ctx.stroke();
+      // Bottom-Left
+      ctx.beginPath(); ctx.moveTo(x, y + h - corner); ctx.lineTo(x, y + h); ctx.lineTo(x + corner, y + h); ctx.stroke();
+      // Bottom-Right
+      ctx.beginPath(); ctx.moveTo(x + w - corner, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - corner); ctx.stroke();
+
+      // Semi-transparent center presence glow
+      ctx.fillStyle = color.replace(')', ', 0.12)').replace('rgb', 'rgba');
+      ctx.fillRect(x, y, w, h);
+
+      // Label badge
+      ctx.fillStyle = color;
+      ctx.fillRect(x - 2, y - 20, ctx.measureText(label).width + 12, 18);
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 10px monospace";
+      ctx.fillText(label, x + 4, y - 7);
+    }
+
+    // Traditional Radar Fallback View
     function drawRadar() {
-      const w = radar.width, h = radar.height;
+      const w = canvas.width, h = canvas.height;
       const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 20;
 
-      rCtx.fillStyle = "rgba(0, 5, 10, 0.15)";
-      rCtx.fillRect(0, 0, w, h);
+      ctx.fillStyle = "rgba(0, 5, 10, 0.2)";
+      ctx.fillRect(0, 0, w, h);
 
       // Distance rings
-      rCtx.strokeStyle = "#1b4d2e";
-      rCtx.lineWidth = 1;
+      ctx.strokeStyle = "#1b4d2e";
+      ctx.lineWidth = 1;
       for (let i = 1; i <= 3; i++) {
-        rCtx.beginPath();
-        rCtx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
-        rCtx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
+        ctx.stroke();
       }
 
       // Sweep line
       radarAngle += 0.04;
-      rCtx.strokeStyle = currentStateId === 4 ? "#d29922" : "#3fb950";
-      rCtx.lineWidth = 2;
-      rCtx.beginPath();
-      rCtx.moveTo(cx, cy);
-      rCtx.lineTo(cx + r * Math.cos(radarAngle), cy + r * Math.sin(radarAngle));
-      rCtx.stroke();
+      ctx.strokeStyle = currentStateId === 4 ? "#d29922" : "#3fb950";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + r * Math.cos(radarAngle), cy + r * Math.sin(radarAngle));
+      ctx.stroke();
 
       // Targets
       currentTargets.forEach((tgt, idx) => {
@@ -365,19 +585,19 @@
         const isStatic = currentStateId === 3;
         const color = isStatic ? "rgba(163, 113, 247, " : (idx === 0 ? "rgba(248, 81, 73, " : "rgba(210, 153, 34, ");
 
-        rCtx.fillStyle = color + "0.85)";
-        rCtx.beginPath();
-        rCtx.arc(tx, ty, isStatic ? 7 : 9 + Math.sin(Date.now() / 150) * 3, 0, Math.PI * 2);
-        rCtx.fill();
+        ctx.fillStyle = color + "0.85)";
+        ctx.beginPath();
+        ctx.arc(tx, ty, isStatic ? 7 : 9 + Math.sin(Date.now() / 150) * 3, 0, Math.PI * 2);
+        ctx.fill();
 
-        rCtx.strokeStyle = color + "0.4)";
-        rCtx.beginPath();
-        rCtx.arc(tx, ty, 18 + (Date.now() / (isStatic ? 80 : 30)) % 14, 0, Math.PI * 2);
-        rCtx.stroke();
+        ctx.strokeStyle = color + "0.4)";
+        ctx.beginPath();
+        ctx.arc(tx, ty, 18 + (Date.now() / (isStatic ? 80 : 30)) % 14, 0, Math.PI * 2);
+        ctx.stroke();
 
-        rCtx.fillStyle = "#fff";
-        rCtx.font = "10px monospace";
-        rCtx.fillText(tgt.label, tx - 28, ty - 14);
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px monospace";
+        ctx.fillText(tgt.label, tx - 28, ty - 14);
       });
     }
 
@@ -459,7 +679,11 @@
     }
 
     function loop() {
-      drawRadar();
+      if (viewMode === 'camera') {
+        drawCameraOverlay();
+      } else {
+        drawRadar();
+      }
       drawChart();
       drawGauge();
       requestAnimationFrame(loop);
