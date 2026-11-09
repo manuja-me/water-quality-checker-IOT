@@ -1,26 +1,34 @@
 /**
- * Wi-Fi CSI Receiver Node - Arduino IDE Compatible
- * Open directly in Arduino IDE (Select "ESP32 Dev Module")
+ * Wi-Fi CSI Receiver Node - Single ESP32 + Router/iPhone Mode
+ * Works with 1 ESP32, an existing Wi-Fi Router, or iPhone Personal Hotspot.
  */
 
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include <esp_wifi.h>
 #include <math.h>
 
-// Pins
+// ==========================================
+// Wi-Fi Configuration
+// Put your Home Router or iPhone Hotspot SSID & Password here.
+// (Ensure 2.4 GHz band is enabled on iPhone: "Maximize Compatibility" ON)
+// ==========================================
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+
+// Output Pin Assignments
 #define PIN_RELAY       26
 #define PIN_BUZZER      27
 #define PIN_LED_ALERT   25
 #define PIN_LED_LINK    33
 
-#define WIFI_CHANNEL    6
 #define WINDOW_SIZE     40
-
-// Threshold offsets
 #define THRESH_SINGLE   16.0f
 #define THRESH_MULTI    35.0f
 #define THRESH_LOW      6.0f
 
+static WiFiUDP udp;
+static IPAddress gatewayIP;
 static float g_window[WINDOW_SIZE] = {0};
 static int g_idx = 0;
 static int g_count = 0;
@@ -47,7 +55,7 @@ void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
     }
     float avg_amp = sum_amp / (float)subcarriers;
 
-    // EMI Spike clamp
+    // Outlier / EMI clamp
     if (g_count > 5) {
         float prev = g_window[(g_idx + WINDOW_SIZE - 1) % WINDOW_SIZE];
         if (prev > 1.0f && avg_amp > prev * 4.5f) {
@@ -74,7 +82,7 @@ void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
     // Fast EMA
     g_ema = (0.25f * raw_var) + (0.75f * g_ema);
 
-    // Adaptive Baseline (in quiet periods)
+    // Adaptive baseline
     if (g_ema < (g_baseline + 8.0f)) {
         g_baseline = (0.995f * g_baseline) + (0.005f * raw_var);
         if (g_baseline < 0.5f) g_baseline = 0.5f;
@@ -90,7 +98,7 @@ void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
         g_state = (g_ema >= t_multi) ? 2 : 1;
     } else if (g_ema < t_rel) {
         if ((now - g_last_motion) < 12000) {
-            g_state = 3; // Static Presence hold
+            g_state = 3; // Static presence hold
         } else {
             g_state = 0; // Empty
         }
@@ -101,7 +109,7 @@ void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
     digitalWrite(PIN_BUZZER, alert ? HIGH : LOW);
     digitalWrite(PIN_LED_ALERT, alert ? HIGH : LOW);
 
-    // Stream telemetry to Laptop: $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
+    // Telemetry output to Laptop: $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
     Serial.printf("$CSI,%lu,%d,%.2f,%.2f,%.2f,%d\n",
                   now, info->rx_ctrl.rssi, raw_var, g_ema, g_baseline, g_state);
 }
@@ -120,12 +128,33 @@ void setup() {
     digitalWrite(PIN_LED_ALERT, LOW);
     digitalWrite(PIN_LED_LINK, LOW);
 
+    // Connect to Wi-Fi Router or iPhone Hotspot
+    Serial.print("[*] Connecting to Wi-Fi: ");
+    Serial.println(WIFI_SSID);
+
     WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+    uint32_t start_connect = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - start_connect) < 8000) {
+        delay(300);
+        Serial.print(".");
+    }
 
+    if (WiFi.status() == WL_CONNECTED) {
+        gatewayIP = WiFi.gatewayIP();
+        Serial.println("\n[+] Wi-Fi Connected!");
+        Serial.print("[+] ESP32 IP: "); Serial.println(WiFi.localIP());
+        Serial.print("[+] Router Gateway: "); Serial.println(gatewayIP);
+        udp.begin(12345);
+    } else {
+        Serial.println("\n[!] Wi-Fi connection timed out. Falling back to Promiscuous Sniffer Mode on Channel 6.");
+        WiFi.disconnect();
+        esp_wifi_set_promiscuous(true);
+        esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
+    }
+
+    // Enable Channel State Information (CSI)
     wifi_csi_config_t csi_config = {
         .lltf_en = true,
         .htltf_en = true,
@@ -138,15 +167,25 @@ void setup() {
     esp_wifi_set_csi_rx_cb(csi_callback, NULL);
     esp_wifi_set_csi(true);
 
-    Serial.println("[*] ESP32 CSI Rx Ready on Channel 6");
+    Serial.println("[*] Wi-Fi CSI Active. Sensing Multipath Disruption...");
 }
 
 void loop() {
-    // Watchdog check for packet loss
-    if (g_count >= WINDOW_SIZE && (millis() - g_last_pkt) > 400) {
-        g_state = 4; // Link loss
+    // If connected to router, send high-rate micro UDP pings (60 Hz) to gateway
+    // Router returns 802.11 ACK frames -> triggers csi_callback continuously!
+    if (WiFi.status() == WL_CONNECTED) {
+        udp.beginPacket(gatewayIP, 80);
+        udp.write((const uint8_t*)"\xAA\xBB", 2);
+        udp.endPacket();
+        delay(16); // ~60 Hz packet rate
+    } else {
+        delay(100);
+    }
+
+    // Link watchdog
+    if (g_count >= WINDOW_SIZE && (millis() - g_last_pkt) > 500) {
+        g_state = 4;
         digitalWrite(PIN_LED_LINK, LOW);
         Serial.printf("$CSI,%lu,-99,0.0,0.0,%.2f,4\n", millis(), g_baseline);
     }
-    delay(100);
 }
