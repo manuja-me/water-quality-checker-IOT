@@ -23,20 +23,22 @@ const char* WIFI_PASS = "AHTBD3B03NE";
 #define PIN_LED_LINK    33
 
 #define WINDOW_SIZE     40
-#define THRESH_SINGLE   16.0f
-#define THRESH_MULTI    35.0f
-#define THRESH_LOW      6.0f
+#define THRESH_SINGLE   5.0f
+#define THRESH_MULTI    18.0f
+#define THRESH_LOW      1.2f
 
 static WiFiUDP udp;
 static IPAddress gatewayIP;
 static float g_window[WINDOW_SIZE] = {0};
 static int g_idx = 0;
 static int g_count = 0;
-static float g_baseline = 1.2f;
-static float g_ema = 1.2f;
+static float g_baseline = 1.0f;
+static float g_ema = 1.0f;
 static int g_state = 0; // 0:Empty, 1:Single, 2:Multi, 3:Static, 4:Loss
 static uint32_t g_last_pkt = 0;
 static uint32_t g_last_motion = 0;
+static float g_prev_amp[64] = {0};
+static bool g_has_prev = false;
 
 void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
     if (!info || !info->buf) return;
@@ -47,45 +49,29 @@ void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
     int8_t *csi_bytes = (int8_t *)info->buf;
     int subcarriers = min((int)(info->len / 2), 64);
 
-    float sum_amp = 0.0f;
+    // Per-subcarrier differential multipath energy (prevents frequency-selective fading cancellation)
+    float sum_diff = 0.0f;
     for (int i = 0; i < subcarriers; i++) {
         int8_t imag = csi_bytes[2 * i];
         int8_t real = csi_bytes[2 * i + 1];
-        sum_amp += sqrtf((float)(real * real + imag * imag));
-    }
-    float avg_amp = sum_amp / (float)subcarriers;
-
-    // Outlier / EMI clamp
-    if (g_count > 5) {
-        float prev = g_window[(g_idx + WINDOW_SIZE - 1) % WINDOW_SIZE];
-        if (prev > 1.0f && avg_amp > prev * 4.5f) {
-            avg_amp = prev * 1.5f;
+        float amp = sqrtf((float)(real * real + imag * imag));
+        if (g_has_prev) {
+            float diff = amp - g_prev_amp[i];
+            sum_diff += diff * diff;
         }
+        g_prev_amp[i] = amp;
     }
+    g_has_prev = true;
 
-    g_window[g_idx] = avg_amp;
-    g_idx = (g_idx + 1) % WINDOW_SIZE;
-    if (g_count < WINDOW_SIZE) { g_count++; return; }
+    float raw_var = (subcarriers > 0) ? (sum_diff / (float)subcarriers) : 0.0f;
 
-    // Sliding Mean & Variance
-    float mean = 0.0f;
-    for (int i = 0; i < WINDOW_SIZE; i++) mean += g_window[i];
-    mean /= (float)WINDOW_SIZE;
-
-    float raw_var = 0.0f;
-    for (int i = 0; i < WINDOW_SIZE; i++) {
-        float diff = g_window[i] - mean;
-        raw_var += diff * diff;
-    }
-    raw_var /= (float)WINDOW_SIZE;
-
-    // Fast EMA
+    // Fast EMA of subcarrier disruption
     g_ema = (0.25f * raw_var) + (0.75f * g_ema);
 
-    // Adaptive baseline
-    if (g_ema < (g_baseline + 8.0f)) {
+    // Adaptive baseline tracker (adapts only during quiet baseline periods)
+    if (g_ema < (g_baseline + 3.0f)) {
         g_baseline = (0.995f * g_baseline) + (0.005f * raw_var);
-        if (g_baseline < 0.5f) g_baseline = 0.5f;
+        if (g_baseline < 0.4f) g_baseline = 0.4f;
     }
 
     float t_single = g_baseline + THRESH_SINGLE;
@@ -96,17 +82,20 @@ void IRAM_ATTR csi_callback(void *ctx, wifi_csi_info_t *info) {
     if (g_ema >= t_single) {
         g_last_motion = now;
         g_state = (g_ema >= t_multi) ? 2 : 1;
-    } else if (g_ema < t_rel) {
-        if ((now - g_last_motion) < 12000) {
-            g_state = 3; // Static presence hold
+    } else if (g_ema >= t_rel) {
+        g_last_motion = now;
+        g_state = 1; // Subtle motion
+    } else {
+        if ((now - g_last_motion) < 8000) {
+            g_state = 3; // Static presence hold (8s)
         } else {
             g_state = 0; // Empty
         }
     }
 
-    bool alert = (g_state == 1 || g_state == 2);
+    bool alert = (g_state == 1 || g_state == 2 || g_state == 3);
     digitalWrite(PIN_RELAY, alert ? HIGH : LOW);
-    digitalWrite(PIN_BUZZER, alert ? HIGH : LOW);
+    digitalWrite(PIN_BUZZER, (g_state == 1 || g_state == 2) ? HIGH : LOW);
     digitalWrite(PIN_LED_ALERT, alert ? HIGH : LOW);
 
     // Telemetry output to Laptop: $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
@@ -182,8 +171,8 @@ void loop() {
         delay(100);
     }
 
-    // Link watchdog
-    if (g_count >= WINDOW_SIZE && (millis() - g_last_pkt) > 500) {
+    // Link watchdog (2.0s timeout to allow heavy human body RF absorption without false link-loss)
+    if (g_count >= WINDOW_SIZE && (millis() - g_last_pkt) > 2000) {
         g_state = 4;
         digitalWrite(PIN_LED_LINK, LOW);
         Serial.printf("$CSI,%lu,-99,0.0,0.0,%.2f,4\n", millis(), g_baseline);

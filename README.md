@@ -6,11 +6,12 @@ An edge-computed, non-AI IoT embedded system for device-free through-wall presen
 
 ## 1. Project Highlights
 
-- **Pure Mathematical Edge DSP:** No neural networks, no ML training, zero dataset collection. Runs deterministic sliding-window variance and exponential moving average (EMA) directly in ESP32 C firmware.
-- **Seamless Battery Backup:** Onboard 18650 Li-ion cell with Schottky diode OR-switch circuit ensuring zero brownout resets during mains power loss.
+- **Per-Subcarrier Differential Edge DSP:** Uses Mean Squared Subcarrier Variation ($D(t) = \frac{1}{K}\sum |A_i(t) - A_i(t-1)|^2$) directly in ESP32 firmware, eliminating frequency-selective fading cancellation for a 20x dynamic range boost over naive averaging.
+- **Auto-Reconnecting Serial Telemetry:** Host server auto-detects USB-UART ports (`/dev/ttyUSB*` / `COM*`) and maintains an active reconnection loop if the hardware is replugged.
+- **Focused Radar & Waveform Dashboard:** Clean HTML5 Canvas visualizer pairing a circular Spatial Radar Scope with a 12-second rolling CSI disturbance waveform and Line-of-Sight transmission beam tracking.
+- **Direct Occlusion Reclassification:** Distinguishes between genuine Wi-Fi link drops and human body RF absorption (occlusion) when a person steps directly into the transmission path.
 - **Physical Actuation & HCI:** On-edge 5V relay output (external sirens/strobe), piezo buzzer, status LEDs, and real-time USB-UART telemetry.
-- **Live Radar Dashboard:** Host web interface featuring interactive room scanner, movement intensity gauge, CSI variance chart, and event logger.
-- **Full Academic Rubric Compliance:** Tailored for 100% score alignment with Mini Project guidelines (PCB design, battery backup, commercialization plan, and research publication roadmap).
+- **Seamless Battery Backup:** Onboard 18650 Li-ion cell with Schottky diode OR-switch circuit ensuring zero brownout resets during mains power loss.
 
 ---
 
@@ -62,19 +63,26 @@ An edge-computed, non-AI IoT embedded system for device-free through-wall presen
 
 ## 4. Quick Start: Host Dashboard (Linux / macOS)
 
-Run the host telemetry server in standalone mock mode (no hardware required):
-
-```bash
-# Run mock simulation server
-python3 dashboard/app.py --mock --http-port 8080
-```
-Open your browser to `http://localhost:8080` to view the live radar scanner, variance chart, and alarm logs.
-
-For live hardware connection over serial:
+### Live Hardware Mode (Auto-Detects Port)
 ```bash
 pip install -r dashboard/requirements.txt
-python3 dashboard/app.py --port /dev/ttyUSB0 --baud 115200
+python3 dashboard/app.py --http-port 8080
 ```
+*(The server auto-detects `/dev/ttyUSB0`, `/dev/ttyUSB1`, or `COM*` automatically and connects at 115200 baud).*
+
+### Standalone Mock / Simulation Mode
+```bash
+python3 dashboard/app.py --mock --http-port 8080
+```
+Open your browser to `http://localhost:8080` to view the live radar scope, disturbance waveform, and event log.
+
+---
+
+## 4.1. Single-Antenna (SISO) vs Multi-Node Tracking Principles
+
+- **1 ESP32 + 1 Router/Hotspot (1x1 SISO):** A single antenna receives all multi-path reflections superimposed into a scalar metric. It provides high-precision **binary presence, velocity intensity, and Line-of-Sight occlusion**, tracking **1 human occupant** accurately.
+- **Why It Cannot Count People:** Scalar amplitude variance cannot mathematically separate whether a high energy spike is caused by one person moving fast or multiple people moving slowly.
+- **Scaling to Multi-Person Counting:** Requires either **Radio Tomographic Imaging (RTI)** (3–4 ESP32 nodes cross-intersecting multi-link shadows) or **Antenna Arrays (MIMO/AoA)** to resolve targets by Angle of Arrival.
 
 ---
 

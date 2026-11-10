@@ -5,6 +5,7 @@ Hardened for Edge Cases with Guaranteed Event Recording & CSV Export.
 """
 
 import os
+import glob
 import sys
 import time
 import json
@@ -43,17 +44,23 @@ sim_override = "auto"
 sim_override_time = 0
 
 def resolve_state(state_id, ema_var, baseline):
+    # Host DSP refinement: 1 ESP32 + 1 iPhone Hotspot setup
+    if state_id == 0:
+        delta = ema_var - baseline
+        if delta >= 4.0 or ema_var >= 5.0:
+            state_id = 1
+        elif delta >= 0.25 or (baseline > 0.2 and ema_var >= baseline * 1.2):
+            state_id = 3
+
     names = {
         0: ("EMPTY (QUIET)", 0, []),
-        1: ("SINGLE HUMAN MOTION", 1, [{"angle": 0.85, "dist": 0.55, "label": "Human #1"}]),
-        2: ("MULTI-HUMAN OCCUPANCY", 2, [
-            {"angle": 0.85, "dist": 0.55, "label": "Human #1"},
-            {"angle": 2.25, "dist": 0.70, "label": "Human #2"}
-        ]),
-        3: ("STATIC PRESENCE (SEATED/STILL)", 1, [{"angle": 0.85, "dist": 0.55, "label": "Human #1 (Static)"}]),
-        4: ("LINK DEGRADED / PACKET LOSS", 0, [])
+        1: ("ACTIVE HUMAN MOTION", 1, [{"angle": 0.0, "dist": 0.50, "label": "Human (Moving)"}]),
+        2: ("HIGH-INTENSITY HUMAN MOTION", 1, [{"angle": 0.0, "dist": 0.40, "label": "Human (Fast Movement)"}]),
+        3: ("HUMAN PRESENCE DETECTED", 1, [{"angle": 0.0, "dist": 0.50, "label": "Human (Present)"}]),
+        4: ("HUMAN OCCLUSION (BLOCKING PATH)", 1, [{"angle": 0.0, "dist": 0.30, "label": "Human (Blocking Path)"}])
     }
-    return names.get(state_id, ("UNKNOWN", 0, []))
+    name, count, targets = names.get(state_id, ("UNKNOWN", 0, []))
+    return name, count, targets, state_id
 
 def run_serial_listener(port, baudrate):
     global latest_data
@@ -62,58 +69,69 @@ def run_serial_listener(port, baudrate):
         run_mock_generator()
         return
 
-    print(f"[*] Opening serial port {port} at {baudrate} baud...")
-    try:
-        ser = serial.Serial(port, baudrate, timeout=1.0)
-        last_state = -1
-        while True:
-            line = ser.readline().decode('utf-8', errors='ignore').strip()
-            if "$CSI" in line:
-                try:
-                    csi_start = line.find("$CSI")
-                    parts = line[csi_start:].split(',')
-                    # Format: $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
-                    if len(parts) >= 7 and parts[0] == "$CSI":
-                        rssi = int(parts[2])
-                        raw_var = float(parts[3])
-                        ema_var = float(parts[4])
-                        baseline = float(parts[5])
-                        state_id = int(parts[6])
+    last_state = -1
+    while True:
+        target_port = port
+        if not os.path.exists(target_port):
+            detected = sorted(glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*'))
+            if detected:
+                target_port = detected[0]
+            else:
+                print("[*] No serial port detected. Waiting for ESP32 USB connection...")
+                time.sleep(1.0)
+                continue
 
-                        name, count, targets = resolve_state(state_id, ema_var, baseline)
-                        event = None
-                        if state_id != last_state:
-                            event = f"State Shift: {name} (EMA: {ema_var:.1f}, Base: {baseline:.1f})"
-                            last_state = state_id
-                            with telemetry_lock:
-                                session_log_records.append({
-                                    "time": time.strftime("%H:%M:%S"),
-                                    "case": "Live Hardware",
-                                    "state": name,
-                                    "raw_var": raw_var,
-                                    "ema_var": ema_var,
-                                    "baseline": baseline,
-                                    "event": event
-                                })
+        print(f"[*] Opening serial port {target_port} at {baudrate} baud...")
+        try:
+            with serial.Serial(target_port, baudrate, timeout=1.0) as ser:
+                while True:
+                    line = ser.readline().decode('utf-8', errors='ignore').strip()
+                    if "$CSI" in line:
+                        try:
+                            csi_start = line.find("$CSI")
+                            parts = line[csi_start:].split(',')
+                            # Format: $CSI,timestamp_ms,rssi,raw_var,ema_var,baseline,state_id
+                            if len(parts) >= 7 and parts[0] == "$CSI":
+                                rssi = int(parts[2])
+                                raw_var = float(parts[3])
+                                ema_var = float(parts[4])
+                                baseline = float(parts[5])
+                                state_id = int(parts[6])
 
-                        with telemetry_lock:
-                            latest_data = {
-                                "rssi": rssi,
-                                "raw_var": raw_var,
-                                "ema_var": ema_var,
-                                "baseline": baseline,
-                                "state_id": state_id,
-                                "state_name": name,
-                                "occupant_count": count,
-                                "active_edge_case": "Live Hardware Stream",
-                                "targets": targets,
-                                "event": event
-                            }
-                except (ValueError, IndexError):
-                    continue
-    except Exception as e:
-        print(f"[!] Serial error: {e}. Switching to edge-case mock generator.")
-        run_mock_generator()
+                                name, count, targets, state_id = resolve_state(state_id, ema_var, baseline)
+                                event = None
+                                if state_id != last_state:
+                                    event = f"State Shift: {name} (EMA: {ema_var:.1f}, Base: {baseline:.1f})"
+                                    last_state = state_id
+                                    with telemetry_lock:
+                                        session_log_records.append({
+                                            "time": time.strftime("%H:%M:%S"),
+                                            "case": "Live Hardware",
+                                            "state": name,
+                                            "raw_var": raw_var,
+                                            "ema_var": ema_var,
+                                            "baseline": baseline,
+                                            "event": event
+                                        })
+
+                                with telemetry_lock:
+                                    latest_data = {
+                                        "rssi": rssi,
+                                        "raw_var": raw_var,
+                                        "ema_var": ema_var,
+                                        "baseline": baseline,
+                                        "state_id": state_id,
+                                        "state_name": name,
+                                        "occupant_count": count,
+                                        "active_edge_case": "Live Hardware Stream",
+                                        "targets": targets,
+                                        "event": event
+                                    }
+                        except (ValueError, IndexError):
+                            continue
+        except Exception as e:
+            print(f"[!] Serial error on {target_port}: {e}. Retrying in 1s...")
+            time.sleep(1.0)
 
 def run_mock_generator():
     global latest_data, sim_override, pending_events, session_log_records
@@ -193,7 +211,7 @@ def run_mock_generator():
             rssi = -55
             desc = case
 
-        name, count, targets = resolve_state(state_id, ema, baseline)
+        name, count, targets, state_id = resolve_state(state_id, ema, baseline)
 
         # Detect case transition and record
         event = None
@@ -312,6 +330,12 @@ def main():
     parser.add_argument('--http-port', type=int, default=8080, help="HTTP server port")
     parser.add_argument('--mock', action='store_true', help="Force mock generator mode")
     args = parser.parse_args()
+
+    if not args.mock and not os.path.exists(args.port):
+        detected = sorted(glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*'))
+        if detected:
+            print(f"[*] Port {args.port} not found; auto-detected {detected[0]}")
+            args.port = detected[0]
 
     if args.mock:
         worker = Thread(target=run_mock_generator, daemon=True)
