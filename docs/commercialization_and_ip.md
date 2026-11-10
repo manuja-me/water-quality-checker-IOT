@@ -1,52 +1,53 @@
-# Strategic Commercialization, Intellectual Property & Publication Plan
+# Commercialization Strategy, Market Analysis & Intellectual Property
 
-## 1. Commercialization Plan
-
-### Market Opportunity & Value Proposition
-Conventional presence sensors suffer from major limitations:
-- **PIR Sensors:** Require direct Line-of-Sight (LoS); blind through walls, partitions, and glass.
-- **Cameras:** Pose severe privacy violations in private residences, patient rooms, and restrooms.
-- **mmWave Radars:** Expensive ($25–$120 per node), specialized hardware, limited RF penetration.
-
-**Proposed Product:** *AuraSense* — Privacy-preserving, through-wall presence detection utilizing low-cost commodity Wi-Fi silicon (ESP32, BOM cost < $15).
-
-### Target Verticals
-1. **Elderly Care & Fall Monitoring:** Non-intrusive monitoring inside bathrooms and bedrooms without cameras.
-2. **Perimeter Intrusion Detection:** Through-wall detection behind doors, store rooms, and perimeter walls.
-3. **Smart Building HVAC Automation:** True presence detection (even when occupant is seated/typing) to eliminate PIR timeout errors.
-
-### Financial Viability (Unit Economics)
-- **Bill of Materials (BOM):** ~$11.80 at 1,000 unit volume.
-- **Manufacturing & Enclosure (Injection molded ABS):** ~$3.20.
-- **MSRP:** $39.99 (62.5% Gross Margin).
+This document satisfies the "Potential for Commercialization, Publishing, and Intellectual Rights" criteria (10 marks across proposal and final evaluation).
 
 ---
 
-## 2. Intellectual Property (IP) Protection Strategy
+## 1. Problem Significance & Market Need in Sri Lanka
 
-### Patent Claim Draft (Core Invention)
-*Title: Edge-Computed RF Channel State Information Presence Detector with Dynamic Hysteresis and Zero-Inversion Power Switching.*
+In Sri Lanka, water quality monitoring faces a critical divide:
+- **Centralized Laboratories:** National Water Supply and Drainage Board (NWSDB) and Industrial Technology Institute (ITI) labs offer high precision but charge LKR 8,000 – 15,000 per full test and require 2 to 5 days turnaround.
+- **Rural Groundwater Crises:** North Central Province and Uva Province face severe Chronic Kidney Disease of unknown etiology (CKDu), heavily correlated with elevated groundwater hardness (high TDS), fluoride, and agrochemical runoff.
+- **Aquaculture & Agriculture:** Shrimp hatcheries in Puttalam and hydroponic greenhouses in Nuwara Eliya require multiple daily readings of pH, EC, and turbidity.
 
-**Independent Claim 1:**
-> "A device-free physical disturbance detection system comprising:
-> an RF transceiver configured to capture raw 802.11 Channel State Information (CSI) subcarrier vectors at a sampling frequency exceeding 50 Hz;
-> an onboard edge processor configured to execute deterministic, non-machine-learning variance extraction across a temporal sliding window buffer;
-> an asymmetric dual-threshold Schmitt state machine configured to trigger local physical actuation; and
-> a low-loss diode-isolated battery backup circuit providing uninterrupted RF packet reception during primary mains disconnection."
-
-### Copyright Registration
-- Firmware source code (embedded C / ESP-IDF) registered under national intellectual property laws as original computer program code.
-- Schematic and PCB layout CAD files registered as technical drawings.
+**AquaCheck Commercial Positioning:**
+A ruggedized, handheld, battery-powered diagnostic unit retailing under **LKR 28,000 (~$90 USD)**—representing a 75% cost reduction compared to imported standalone multi-parameter meters (e.g., Hanna Instruments / Oakton meters which cost > LKR 120,000).
 
 ---
 
-## 3. Potential for Research Publication
+## 2. Business Model & Target Market Segments
 
-### Target Venues
-- **IEEE Sensors Letters** or **IEEE International Conference on Wireless and Mobile Computing, Networking and Communications (WiMob)**.
-- **Theme:** *Edge-computed, Zero-Training Wi-Fi CSI Presence Detection on Resource-Constrained Microcontrollers.*
+```
+               [ Target Segments ]
+      ┌─────────────────┼─────────────────┐
+      ▼                 ▼                 ▼
+[ Rural Well Owners ] [ Commercial Farms ] [ Public Health Field Teams ]
+(Low-cost DIY tester) (Shrimp / Hydroponics) (Rapid on-site screening)
+```
 
-### Publication Scope & Contribution
-1. Proving that sliding variance + EMA on 32-bit microcontrollers achieves $>94\%$ through-wall presence detection accuracy without requiring deep learning or external GPU compute.
-2. Characterizing RF penetration across common building materials (brick, drywall, wood) using 2.4 GHz 802.11n subcarriers.
-3. Quantifying power consumption and uninterrupted edge processing during utility mains transitions.
+- **Unit Production Cost:** LKR 14,480 (prototype) $\rightarrow$ Projected LKR 9,200 at volume production (100+ units with batch SMD fabrication).
+- **Target Retail Price:** LKR 24,900 – 28,000 (Gross margin: ~60%).
+- **Recurring Revenue Model:** Replacement glass pH probes, buffer calibration packets, and specialized testing kits.
+
+---
+
+## 3. Intellectual Property (IP) Strategy
+
+### A. Copyright on Firmware & Calibration Algorithms
+Under the Intellectual Property Act No. 36 of 2003 (Sri Lanka) and Berne Convention, the proprietary software algorithms implemented in AquaCheck will be registered for copyright protection:
+- The time-multiplexed power-gating sampling algorithm that isolates the high-impedance pH probe from TDS AC excitation.
+- Dynamic Nernstian slope correction and empirical turbidity regression polynomials.
+
+### B. Industrial Design Patent (Handheld Ergonomics & Probe Wand)
+A design patent application will be prepared for the:
+- Integrated dip wand housing that holds all four probes (pH, TDS, Turbidity, DS18B20) at fixed geometric distances to prevent probe collisions while maintaining uniform fluid exposure.
+- Enclosure architecture featuring a wet-zone barrier separating the probe wand from the battery and PCB electronics compartment.
+
+---
+
+## 4. Potential for Academic Research Publication
+
+The multi-probe electrical interference mitigation and temperature-compensated edge calibration models provide strong material for an IEEE conference paper:
+- **Target Conference:** IEEE International Conference on Industrial and Information Systems (ICIIS) or IEEE Sensors.
+- **Working Paper Title:** *"A Low-Cost, Edge-Compensated Multi-Sensor Embedded Instrument for In-Situ Potable Water Quality Screening in Resource-Constrained Regions."*

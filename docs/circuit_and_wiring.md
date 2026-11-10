@@ -1,86 +1,70 @@
-# Circuit Design & Breadboard Wiring Guide
+# Circuit, Schematics & Hardware Wiring Guide
 
-## 1. System Overview & Architecture
-
-The sensing system consists of:
-1. **Tx Node (Transmitter):** Standalone ESP32 broadcasting raw 802.11 frames at 50–100 Hz.
-2. **Rx Node (Receiver & Edge DSP):** ESP32 capturing CSI (Channel State Information), computing sliding variance in real time, and driving local indicators and alarms.
-3. **Power Subsystem:** 5V mains input with automatic, glitch-free switchover to an onboard 18650 Li-ion battery via Schottky diode OR-gating.
-4. **Actuation & HCI:** Active piezo buzzer, 1-channel 5V relay module, status LEDs, and USB-UART telemetry link.
+This document specifies the complete pin mapping, power subsystem architecture, and wiring connections for assembling AquaCheck on a prototyping perfboard or custom 2-layer PCB.
 
 ---
 
-## 2. Complete Breadboard Pin-to-Pin Netlist
+## 1. Full ESP32 Pin Allocation Table
 
-### ESP32-WROOM-32 (30-Pin DevKit) Connections
-
-| Component | Component Pin | ESP32 Pin | Function | Electrical Specification |
-| :--- | :--- | :--- | :--- | :--- |
-| **Relay Module** | VCC | 5V Rail | Relay coil supply | 5V DC, ~70 mA coil current |
-| | GND | Common GND | Ground return | Common 0V |
-| | IN | **GPIO 26** | Relay trigger | 3.3V logic compatible, Active LOW/HIGH |
-| **Active Buzzer** | (+) | 5V Rail | Positive supply | 5V DC, ~30 mA |
-| | (-) | 2N2222 Collector | Switched low-side | Controlled via NPN switch |
-| **2N2222 NPN** | Base | **GPIO 27** | Base drive via $1\,\text{k}\Omega$ | $I_B \approx 2.6\,\text{mA}$ ($V_{GPIO}=3.3\text{V}, V_{BE}=0.7\text{V}$) |
-| | Emitter | Common GND | Ground return | 0V |
-| | Collector | Buzzer (-) | Switched ground | Clamped by 1N4148 flyback |
-| **1N4148 Diode** | Cathode (bar) | 5V Rail | Flyback clamp | Suppresses inductive spike |
-| | Anode | 2N2222 Collector | Flyback clamp | Across buzzer coil |
-| **Red LED** (Alert) | Anode (+) | **GPIO 25** | Movement indicator | Via $330\,\Omega$ series resistor ($\sim 4\,\text{mA}$) |
-| | Cathode (-) | Common GND | Ground | |
-| **Green LED** (Link)| Anode (+) | **GPIO 33** | CSI packet lock | Via $330\,\Omega$ series resistor ($\sim 4\,\text{mA}$) |
-| | Cathode (-) | Common GND | Ground | |
-| **Blue LED** (Mains)| Anode (+) | 5V USB Input | Mains presence | Via $1\,\text{k}\Omega$ series resistor ($\sim 3\,\text{mA}$) |
-| | Cathode (-) | Common GND | Ground | |
-| **ESP32 DevKit** | VIN / 5V | Switched 5V Rail | Power input | Feeds onboard 3.3V AMS1117 LDO |
-| | GND | Common GND | Ground | Connected to power ground plane |
-| | TX0 / RX0 | USB-UART bridge | Telemetry | 115200 / 921600 baud to Linux Host |
+| Component | Pin Function | ESP32 Pin | Interface Type | Operating Voltage |
+|---|---|---|---|---|
+| **Analog pH Sensor V1.1** | Signal Out (`A0`) | `GPIO 32` | ADC1_CH4 Analog In | 5.0V VCC / 3.3V Logic |
+| **TS-300B Turbidity Sensor**| Signal Out (`A0`) | `GPIO 33` | ADC1_CH5 Analog In | 5.0V VCC |
+| **Gravity TDS Sensor** | Signal Out (`A0`) | `GPIO 34` | ADC1_CH6 Analog In | 3.3V - 5.0V |
+| **TDS Power Gate MOSFET** | Gate (`2N7000`) | `GPIO 14` | Digital Output | 3.3V Logic (10k pulldown)|
+| **DS18B20 Temp Probe** | Data Wire (Yellow) | `GPIO 4` | 1-Wire Digital Bus | 3.3V (4.7kΩ pull-up) |
+| **SSD1306 0.96" OLED** | `SDA` | `GPIO 21` | I2C Data Bus | 3.3V VCC |
+| **SSD1306 0.96" OLED** | `SCL` | `GPIO 22` | I2C Clock Bus | 3.3V VCC |
+| **MicroSD SPI Breakout** | `SCK` | `GPIO 18` | SPI Clock | 3.3V VCC |
+| **MicroSD SPI Breakout** | `MISO` | `GPIO 19` | SPI Master In | 3.3V VCC |
+| **MicroSD SPI Breakout** | `MOSI` | `GPIO 23` | SPI Master Out | 3.3V VCC |
+| **MicroSD SPI Breakout** | `CS` | `GPIO 5` | SPI Chip Select | 3.3V VCC |
+| **Active Piezo Buzzer** | Anode (+) | `GPIO 25` | Digital Out (Active High)| 3.3V Logic |
+| **Status LED Green (Safe)**| Anode (+) | `GPIO 26` | Digital Out (220Ω series)| 3.3V Logic |
+| **Status LED Red (Alert)** | Anode (+) | `GPIO 27` | Digital Out (220Ω series)| 3.3V Logic |
 
 ---
 
-## 3. Power Subsystem with Seamless Battery Backup
+## 2. Power Subsystem Architecture
 
-### Circuit Schematic
+To guarantee 8+ hours of untethered field operation without voltage sag or brownout resets:
 
 ```
-Mains 5V USB IN ────┬───>| 1N5819 (D1) ───┬───────> Switched 5V Rail ──> ESP32 VIN, Relay VCC
-                    │                     │
-                    ├───> [TP4056]        │
-                    │       │ (B+/B-)     │
-                    │   [18650 Cell]      │
-                    │       │             │
-                    │   [MT3608 Boost]    │
-                    │    (Set to 4.8V)    │
-                    │       │             │
-                    │       └───>| 1N5819 (D2)
-                    │
-                    └───> [1kΩ Resistor] ───> [Blue LED] ───> GND
+[ 5V USB-C Charger / Power Bank ]
+             │
+             ▼
+   [ TP4056 Charger & Protection Board ]
+             ▲
+             │ (Bi-directional Charge/Discharge)
+             ▼
+   [ 18650 Li-ion Cell (3.7V, 2600mAh) ]
+             │
+             ▼
+    [ SPST Mini Rocker Switch ]
+             │
+             ▼
+   [ MT3608 DC-DC Step-Up Boost Converter ] ────► Regulated 5.0V System Rail
+                                                       │
+                                 ┌─────────────────────┴─────────────────────┐
+                                 ▼                                           ▼
+                     [ ESP32 VIN (Onboard LDO) ]                 [ 5V Sensors: Turbidity, pH ]
+                                 │
+                                 ▼
+                     Regulated 3.3V Bus ──► [ OLED, DS18B20, MicroSD, TDS ]
 ```
 
-### Operation Theory
-1. **Mains Powered ($V_{in} = 5.0\,\text{V}$):**
-   - $V_{D1,\text{out}} = 5.0\,\text{V} - 0.3\,\text{V} = 4.7\,\text{V}$.
-   - MT3608 output trimmer is adjusted to $4.8\,\text{V}$.
-   - $V_{D2,\text{out}} = 4.8\,\text{V} - 0.3\,\text{V} = 4.5\,\text{V}$.
-   - Since $4.7\,\text{V} > 4.5\,\text{V}$, diode D2 is reverse-biased ($\Delta V = -0.2\,\text{V}$). Zero current drawn from 18650 cell.
-   - TP4056 charges 18650 cell to $4.2\,\text{V}$ using mains current.
-2. **Mains Loss ($V_{in} \to 0\,\text{V}$):**
-   - D1 ceases conduction immediately.
-   - Rail voltage dips to $4.5\,\text{V}$, forward-biasing D2 instantaneously ($< 1\,\mu\text{s}$).
-   - Onboard ESP32 AMS1117 LDO requires $\ge 4.2\,\text{V}$ to output regulated $3.3\,\text{V}$; $4.5\,\text{V}$ provides sufficient headroom.
-   - Result: No brownout reset on ESP32.
+### Power Ratings & Current Consumption:
+- Total nominal system current draw at 5V: **~150 mA**
+- Estimated battery draw from 3.7V Li-ion (at 85% boost efficiency): **~240 mA**
+- Runtime with a 2600mAh 18650 cell: **~10.8 Hours continuous operation**.
 
 ---
 
-## 4. Actuation & Signal Level Isolation
+## 3. Critical Wiring Guidelines
 
-### Buzzer Low-Side Switch
-ESP32 GPIO pins supply max $12\,\text{mA}$ at $3.3\,\text{V}$. An active buzzer consumes $30\,\text{mA}$ at $5\,\text{V}$. 
-- 2N2222 NPN transistor operates in saturation:
-  $$I_B = \frac{3.3\,\text{V} - 0.7\,\text{V}}{1000\,\Omega} = 2.6\,\text{mA}$$
-  With $h_{FE,\text{sat}} \approx 10$, $I_C$ capability is up to $26\,\text{mA}$ (full saturation reached for buzzer load).
-- 1N4148 clamped in parallel with the buzzer drains inductive discharge on turn-off, protecting the transistor.
-
-### Relay Module Driver
-- Connected to **GPIO 26**.
-- The relay module integrates an EL817 optocoupler and protection diode. Direct connection of the `IN` pin to GPIO 26 provides galvanic isolation between ESP32 digital logic and the relay coil.
+1. **ADC Reference Stability:**
+   - ESP32 ADC channels are susceptible to high-frequency noise from WiFi operations. AquaCheck uses only `ADC1` pins (`GPIO 32`, `33`, `34`). A `0.1 µF` ceramic capacitor is placed across each analog input to ground to decouple switching noise.
+2. **DS18B20 Pull-up Resistor:**
+   - A `4.7 kΩ` resistor must be soldered between the `DATA` pin (`GPIO 4`) and `3.3V VCC`. Omitting this resistor causes the 1-Wire bus to return `-127.0°C` errors.
+3. **Common Ground Plane:**
+   - The ground lines of the 18650 battery, TP4056 board, MT3608 boost converter, ESP32, and all sensor boards must terminate at a single star ground point to prevent ground loop noise from shifting the sensitive millivolt pH reading.

@@ -1,81 +1,89 @@
-# System Architecture & Technical Diagrams
+# System Architecture & Technical Specifications
 
-## 1. Top-Level Hardware & Software Architecture
+AquaCheck is structured into four tightly coupled layers:
+1. **Sensory Transduction Layer** (Multi-probe physical acquisition)
+2. **Signal Conditioning & Hardware Isolation Layer** (Noise mitigation & power gating)
+3. **Embedded Dual-Core Processing Layer** (ESP32 FreeRTOS tasks & physical calibration math)
+4. **HCI, Storage & Diagnostic Output Layer** (OLED, MicroSD, Alert actuation & Serial/Web telemetry)
 
-```mermaid
-flowchart TD
-    subgraph TxNode ["Tx Illumination Node (ESP32)"]
-        TxClock["FreeRTOS Timer (80 Hz)"] --> TxPayload["ESP-NOW / 802.11 Frame Generator"]
-        TxPayload --> TxRF["2.4 GHz RF Power Amplifier"]
-    end
-
-    TxRF -.->|"Multipath RF Waves\n(Through Wall / Obstacle)"| Channel["Sensing Medium\n(Wall / Monitored Room)"]
-    Channel -.-> RxAntenna["Rx Antenna"]
-
-    subgraph RxNode ["Rx Edge Node (Custom PCB)"]
-        RxAntenna --> Baseband["Wi-Fi Baseband Demodulator"]
-        Baseband --> CSICallback["esp_wifi_set_csi_rx_cb()"]
-        
-        subgraph EdgeDSP ["Embedded DSP Engine (C)"]
-            CSICallback --> AmpExtract["Amplitude Extraction\n|H_k| = sqrt(I_k^2 + Q_k^2)"]
-            AmpExtract --> SlideBuffer["Circular Sliding Window (N=40)"]
-            SlideBuffer --> VarianceCalc["Window Variance V(t)"]
-            VarianceCalc --> EMACalc["Exponential Moving Average S(t)"]
-            EMACalc --> SchmittTrigger["Hysteresis Dual Threshold\n(High=18.5, Low=8.0)"]
-        end
-        
-        SchmittTrigger -->|"GPIO 26"| Relay["5V Optocoupled Relay"]
-        SchmittTrigger -->|"GPIO 27"| Buzzer["2N2222 + 5V Piezo Buzzer"]
-        SchmittTrigger -->|"GPIO 25"| AlertLED["Red Alert LED"]
-        CSICallback -->|"GPIO 33"| LinkLED["Green Link Heartbeat LED"]
-
-        subgraph PowerSystem ["Power & Backup Supply"]
-            Mains["5V USB / DC In"] --> D1["1N5819 (D1)"]
-            Mains --> TP4056["TP4056 Charger"]
-            TP4056 --> Batt["18650 3.7V Li-ion"]
-            Batt --> MT3608["MT3608 Boost (4.8V)"]
-            MT3608 --> D2["1N5819 (D2)"]
-            D1 --> PowerRail["Switched 5V Rail"]
-            D2 --> PowerRail
-            PowerRail --> LDO["AMS1117 3.3V LDO"]
-        end
-    end
-
-    SchmittTrigger -->|"UART Serial ($CSI Frame)"| HostLaptop["Linux Laptop Host"]
-
-    subgraph Dashboard ["Host Visualizer (Python / Web)"]
-        HostLaptop --> SSE["Server-Sent Events Stream"]
-        SSE --> RadarUI["HTML5 Canvas Radar View"]
-        SSE --> ChartUI["Real-time Variance Graph"]
-        SSE --> GaugeUI["Movement Intensity Gauge"]
-    end
+```
+[ Water Sample Container ]
+      │
+      ├──────────────────────┬──────────────────────┬──────────────────────┐
+      ▼                      ▼                      ▼                      ▼
+  [pH Glass Probe]    [Optical Turbidity]     [TDS AC Probe]         [DS18B20 Temp]
+      │                      │                      │                      │
+ [Analog Signal Amp]   [Phototransistor]     [2N7000 MOSFET Gate]    [1-Wire Pull-up]
+      │ (0.0 - 3.3V)         │ (0.5 - 4.0V)         │ (Power Gated)        │ (Digital Data)
+      ▼                      ▼                      ▼                      ▼
+   GPIO 32                GPIO 33                GPIO 34                 GPIO 4
+      └──────────────────────┴──────────┬───────────┴──────────────────────┘
+                                        ▼
+                         [ ESP32 Dual-Core SoC (240MHz) ]
+                        ┌───────────────────────────────┐
+                        │ Core 0: High-Priority FreeRTOS│
+                        │ - Time-Multiplexed Sampling   │
+                        │ - Nernstian pH Correction     │
+                        │ - 25°C Normalized EC/TDS Math │
+                        │ - SLS 614 Classification Logic│
+                        └───────────────┬───────────────┘
+                                        │ Inter-task Queue
+                        ┌───────────────▼───────────────┐
+                        │ Core 1: HCI & Telemetry Task  │
+                        │ - 0.96" SSD1306 OLED (I2C)    │
+                        │ - MicroSD Card Logger (SPI)   │
+                        │ - Piezo & Bi-Color LED Alerts │
+                        │ - USB-UART / Web Stream       │
+                        └───────────────────────────────┘
 ```
 
 ---
 
-## 2. Mathematical Signal Processing Formulation
+## 1. Physical Calibration Models & Mathematical Formulations
 
-### 2.1 Subcarrier Amplitude Extraction
-For each received packet on Channel 6, the Wi-Fi baseband provides a complex CSI vector $H$:
-$$H_k = I_k + j Q_k \quad (k \in [0, N_{sub}-1])$$
-The amplitude of subcarrier $k$ is calculated as:
-$$A_k = \sqrt{I_k^2 + Q_k^2}$$
-The mean amplitude across subcarriers for packet $t$ is:
-$$\bar{A}(t) = \frac{1}{K} \sum_{k=1}^K A_k$$
+### A. Electrical Conductivity (EC) and Total Dissolved Solids (TDS)
+Dissolved mineral ions exhibit increased thermal mobility of approximately 1.9% per °C. To provide consistent readings independent of ambient liquid temperature, measured conductivity ($EC_T$) is normalized to a standard 25.0°C baseline:
 
-### 2.2 Sliding Window Variance
-A circular FIFO buffer maintains the last $N = 40$ mean amplitude samples:
-$$\mu(t) = \frac{1}{N} \sum_{i=0}^{N-1} \bar{A}(t - i)$$
-$$V(t) = \frac{1}{N} \sum_{i=0}^{N-1} \left( \bar{A}(t - i) - \mu(t) \right)^2$$
+$$EC_{25} = \frac{EC_{\text{measured}}}{1.0 + 0.019 \times (T_{\text{water}} - 25.0)}$$
 
-### 2.3 Exponential Moving Average (EMA)
-To eliminate spurious impulse noise without introducing phase delay:
-$$S(t) = \alpha \cdot V(t) + (1 - \alpha) \cdot S(t - 1) \quad (\alpha = 0.25)$$
+TDS (in parts-per-million, ppm) is derived using the standard 0.50 conversion ratio:
 
-### 2.4 Hysteresis Dual-Threshold Decision Rule
-Let $T_{\text{high}} = 18.5$, $T_{\text{low}} = 8.0$, and holdoff time $\tau_{\text{hold}} = 1.5\,\text{s}$:
-$$\text{State}(t) = \begin{cases} 
-\text{TRUE (Movement)}, & \text{if } S(t) \ge T_{\text{high}} \\
-\text{TRUE (Hold)}, & \text{if } S(t) > T_{\text{low}} \text{ and } (t - t_{\text{trigger}}) < \tau_{\text{hold}} \\
-\text{FALSE (Quiet)}, & \text{if } S(t) < T_{\text{low}} \text{ and } (t - t_{\text{trigger}}) \ge \tau_{\text{hold}}
-\end{cases}$$
+$$\text{TDS (ppm)} = EC_{25} (\mu\text{S/cm}) \times 0.50$$
+
+### B. pH Temperature Slope Scaling (Nernst Equation)
+The potential difference developed across the glass electrode membrane is governed by the Nernst relationship:
+
+$$E = E_0 - S(T) \cdot (\text{pH} - 7.0)$$
+
+where the temperature-dependent slope $S(T)$ (in mV per pH unit) is:
+
+$$S(T) = \frac{2.3026 \cdot R \cdot T_{\text{Kelvin}}}{F}$$
+
+- At $0^\circ\text{C}$ ($273.15\text{ K}$): $S = 54.20\text{ mV/pH}$
+- At $25^\circ\text{C}$ ($298.15\text{ K}$): $S = 59.16\text{ mV/pH}$
+- At $40^\circ\text{C}$ ($313.15\text{ K}$): $S = 62.13\text{ mV/pH}$
+
+The temperature-corrected pH is computed in firmware via 2-point buffer calibration:
+
+$$\text{pH}_{\text{corrected}} = 7.0 + \left[ \frac{V_{\text{neutral}} - V_{\text{probe}}}{S(T)} \right]$$
+
+### C. Optical Turbidity Non-Linear Characteristic
+The optical sensor measures infrared light attenuation through suspended matter. The relationship between output collector voltage ($V_{\text{out}}$) and nephelometric turbidity units (NTU) is modeled as a 2nd-order polynomial:
+
+$$\text{Turbidity (NTU)} = -1120.4 \cdot (V_{\text{out}})^2 + 5742.3 \cdot V_{\text{out}} - 4352.9$$
+
+For $V_{\text{out}} \ge 2.50\text{V}$, the sample is clear ($\le 0.5\text{ NTU}$).
+
+---
+
+## 2. Multi-Probe Electrical Isolation & Time-Multiplexing
+
+A frequent pitfall in multi-sensor water testing is **galvanic cross-talk**:
+- The TDS meter injects an alternating AC excitation voltage into the water.
+- The high-impedance glass bulb pH probe (impedance $> 10^8\ \Omega$) picks up this AC excitation as massive millivolt noise, causing wild pH oscillations of $\pm 2.5\text{ pH}$.
+
+**AquaCheck Hardware Solution:**
+The TDS excitation circuitry is isolated through an N-channel MOSFET (2N7000) controlled by ESP32 `GPIO 14`.
+1. TDS excitation power is held `LOW` (disconnected) while the pH probe is sampled and averaged (over 50 ADC samples).
+2. TDS excitation power is switched `HIGH` for 50 ms to stabilize, sampled, and immediately switched back `LOW`.
+3. This eliminates electrical coupling completely without requiring costly isolated DC-DC converters.

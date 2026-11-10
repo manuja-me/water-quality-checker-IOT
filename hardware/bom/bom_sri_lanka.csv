@@ -1,0 +1,16 @@
+Item_ID,Component_Description,Specification_Model,Quantity,Est_Unit_Price_LKR,Subtotal_LKR,Supplier_Source,Purpose_Subsystem
+1,Analog pH Sensor Kit V1.1 with BNC Probe,pH 0-14 Range (BNC glass electrode + signal board),1,4200,4200,Tronic.lk / Duino.lk,Water Acidity/Alkalinity Sensing
+2,Analog Optical Turbidity Sensor Module,TS-300B (0-3000 NTU 5V IR Scattering),1,2850,2850,Duino.lk / Microchip.lk,Water Clarity / Suspended Particle Sensing
+3,Gravity Analog TDS Sensor Module,0-1000 ppm (Titanium AC probe + driver),1,1950,1950,Tronic.lk / Duino.lk,Dissolved Mineral / Salinity Sensing
+4,Waterproof Temperature Probe,DS18B20 Stainless Steel (1-Wire Digital),1,550,550,Microchip.lk / Scion,Liquid Temperature Compensation
+5,Microcontroller Development Board,ESP32 DevKit V1 (30-Pin Dual-Core 240MHz),1,1100,1100,Duino.lk / StemLabs,Core Processing & FreeRTOS DSP
+6,Graphic Display Module,0.96 inch I2C OLED (SSD1306 128x64 White),1,850,850,Local Electronics Shop,Live Real-Time Visual Diagnostics
+7,Offline Storage Kit,MicroSD SPI Breakout + 8GB Class 10 Card,1,900,900,Daraz.lk / Local Store,Autonomous CSV Data Logging
+8,Rechargeable Power Source,18650 Li-ion Cell (3.7V 2600mAh),1,550,550,Tronic.lk,Portable Energy Source
+9,Battery Charger with Protection,TP4056 USB-C Board with DW01 Protection,1,150,150,Duino.lk,USB-C In-System Charging
+10,DC-DC Step-Up Boost Module,MT3608 Mini Boost Converter (3.7V to 5V),1,180,180,Duino.lk,Stable 5V System Power Rail
+11,Power Gating Transistor,2N7000 N-Channel MOSFET (TO-92),2,20,40,Tronic.lk,TDS AC Isolation to Prevent pH Noise
+12,Actuation & Audio-Visual Alerts,Active Piezo Buzzer + 5mm LEDs (Green/Red),Lot,150,150,Local Shop,Immediate Danger & Safe Alerts
+13,Passives & Connectors,4.7k resistor 220R resistors 0.1uF caps headers,Lot,200,200,Pettah Electronics,Decoupling & Logic Conditioning
+14,Handheld Enclosure & Wand,Custom 3D Printed ABS Case with Probe Wand,1,800,800,Makerspace DIY,Ergonomic Portable Packaging
+TOTAL,,,,14480,LKR (~$47.50 USD),,Sub-$50 Budget Compliance
