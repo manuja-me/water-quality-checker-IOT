@@ -4,6 +4,7 @@ Wi-Fi CSI Real-Time Telemetry & Radar Dashboard Host Server
 Hardened for Edge Cases with Guaranteed Event Recording & CSV Export.
 """
 
+import os
 import sys
 import time
 import json
@@ -236,7 +237,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
-            with open('dashboard/index.html', 'rb') as f:
+            html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+            with open(html_path, 'rb') as f:
                 self.wfile.write(f.read())
         elif parsed.path == '/stream':
             self.send_response(200)

@@ -4,6 +4,7 @@
  */
 
 #include <WiFi.h>
+#include <esp_wifi.h>
 #include <esp_now.h>
 
 #define WIFI_CHANNEL 6
